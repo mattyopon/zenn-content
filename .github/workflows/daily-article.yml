@@ -1,0 +1,43 @@
+name: Daily Article Generator
+
+on:
+  schedule:
+    # 毎日 09:00 JST (00:00 UTC) に実行
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # 手動実行も可能
+
+permissions:
+  contents: write
+
+jobs:
+  generate-article:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Restore generator state
+        uses: actions/cache@v4
+        with:
+          path: scripts/.generator_state.json
+          key: generator-state-${{ github.run_number }}
+          restore-keys: generator-state-
+
+      - name: Generate daily article
+        run: python scripts/generate_article.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add articles/
+          git diff --cached --quiet && echo "No new articles" && exit 0
+          git commit -m "Add daily engineering article ($(date +%Y-%m-%d))"
+          git push
