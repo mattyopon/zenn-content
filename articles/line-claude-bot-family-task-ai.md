@@ -61,3 +61,4 @@ LINE Messaging API ──> Express Server ──> Claude API
 ## まとめ
 
 LINE × Claude API の組み合わせは、**日常的に使われるAIアシスタント**を作るのに最適です。高度なNLU能力により、「あれやっといて」のような曖昧な指示も理解してくれます。家族だけでなく、小規模チームのタスク管理にも応用できます。
+

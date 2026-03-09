@@ -48,3 +48,4 @@ SRE の監視基盤を学習するために、Prometheus + Grafana + Node Export
 ## まとめ
 
 SRE の監視基盤は複雑に見えますが、Docker Compose でローカルに構築すれば手軽に学べます。Prometheus + Grafana は事実上の業界標準であり、この知識は実務で直接活かせます。
+
