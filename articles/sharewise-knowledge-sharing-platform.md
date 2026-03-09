@@ -3,7 +3,7 @@ title: "信頼スコア付きナレッジ共有プラットフォームを作っ
 emoji: "🧠"
 type: "tech"
 topics: ["python", "fastapi", "webservice", "oss"]
-published: true
+published: false
 ---
 
 ## TL;DR

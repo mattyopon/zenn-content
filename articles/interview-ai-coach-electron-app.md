@@ -3,7 +3,7 @@ title: "AI面接練習アプリをElectron + Reactで作った"
 emoji: "🎤"
 type: "tech"
 topics: ["electron", "react", "ai", "typescript"]
-published: true
+published: false
 ---
 
 ## TL;DR

@@ -3,7 +3,7 @@ title: "YouTube動画をX/ニコニコ/Bilibiliに自動投稿するCLIツール
 emoji: "📺"
 type: "tech"
 topics: ["python", "youtube", "automation", "cli"]
-published: true
+published: false
 ---
 
 ## TL;DR

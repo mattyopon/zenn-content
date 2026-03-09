@@ -1,0 +1,49 @@
+name: Gradual Publish
+
+on:
+  schedule:
+    # 毎日 00:00 UTC（JST 09:00）に実行
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+permissions:
+  contents: write
+
+jobs:
+  publish-articles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish up to 3 draft articles
+        run: |
+          python3 -c "
+          import glob, re
+
+          files = sorted(glob.glob('articles/*.md'))
+          count = 0
+          for f in files:
+              if count >= 3:
+                  break
+              with open(f, 'r') as fh:
+                  content = fh.read()
+              if re.search(r'^published:\s*false\s*$', content, re.MULTILINE):
+                  new_content = re.sub(r'^published:\s*false\s*$', 'published: true', content, count=1, flags=re.MULTILINE)
+                  with open(f, 'w') as fh:
+                      fh.write(new_content)
+                  print(f'Published: {f}')
+                  count += 1
+          if count == 0:
+              print('No draft articles found.')
+          else:
+              print(f'Published {count} article(s).')
+          "
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add articles/
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Publish draft articles ($(date +%Y-%m-%dT%H:%M UTC))"
+          git push
