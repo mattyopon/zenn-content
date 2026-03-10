@@ -3,7 +3,7 @@ title: "Claude Agent Team v4.0 ― CLAUDE.md 63%削減・Hub→Mesh通信・視�
 emoji: "🕸️"
 type: "tech"
 topics: ["claudecode", "ai", "llm", "automation", "devops"]
-published: false
+published: true
 ---
 
 ## TL;DR
