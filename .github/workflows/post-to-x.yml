@@ -110,14 +110,16 @@ jobs:
           fi
           echo "username=$ZENN_USER" >> "$GITHUB_OUTPUT"
 
+      - name: Install tweepy
+        if: steps.find-articles.outputs.has_articles == 'true'
+        run: pip install tweepy
+
       - name: Post to X
         if: steps.find-articles.outputs.has_articles == 'true'
         run: |
           python3 << 'PYEOF'
-          import json, os, sys
-          from urllib.request import urlopen, Request
-          from urllib.parse import quote
-          import hmac, hashlib, base64, time, uuid
+          import json, os, sys, time
+          import tweepy
 
           articles_json = os.environ.get("ARTICLES_JSON", "[]")
           zenn_user = os.environ.get("ZENN_USER", "mattyopon")
@@ -129,53 +131,17 @@ jobs:
 
           if not all([api_key, api_secret, access_token, access_secret]):
               print("⚠ X API credentials not configured. Skipping.")
-              print("Set these repository secrets: X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET")
               sys.exit(0)
 
           articles = json.loads(articles_json)
 
-          def percent_encode(s):
-              return quote(str(s), safe="")
-
-          def create_oauth_signature(method, url, params, consumer_secret, token_secret):
-              sorted_params = "&".join(f"{percent_encode(k)}={percent_encode(v)}" for k, v in sorted(params.items()))
-              base_string = f"{method}&{percent_encode(url)}&{percent_encode(sorted_params)}"
-              signing_key = f"{percent_encode(consumer_secret)}&{percent_encode(token_secret)}"
-              signature = hmac.new(signing_key.encode(), base_string.encode(), hashlib.sha256)
-              return base64.b64encode(signature.digest()).decode()
-
-          def post_tweet(text):
-              url = "https://api.x.com/2/tweets"
-              oauth_params = {
-                  "oauth_consumer_key": api_key,
-                  "oauth_nonce": uuid.uuid4().hex,
-                  "oauth_signature_method": "HMAC-SHA256",
-                  "oauth_timestamp": str(int(time.time())),
-                  "oauth_token": access_token,
-                  "oauth_version": "1.0",
-              }
-              signature = create_oauth_signature("POST", url, oauth_params, api_secret, access_secret)
-              oauth_params["oauth_signature"] = signature
-
-              auth_header = "OAuth " + ", ".join(
-                  f'{percent_encode(k)}="{percent_encode(v)}"'
-                  for k, v in sorted(oauth_params.items())
-              )
-
-              body = json.dumps({"text": text}).encode()
-              req = Request(url, data=body, method="POST")
-              req.add_header("Authorization", auth_header)
-              req.add_header("Content-Type", "application/json")
-
-              try:
-                  resp = urlopen(req, timeout=15)
-                  result = json.loads(resp.read())
-                  tweet_id = result.get("data", {}).get("id", "unknown")
-                  print(f"  ✓ Tweet posted (ID: {tweet_id})")
-                  return True
-              except Exception as e:
-                  print(f"  ✗ Tweet failed: {e}")
-                  return False
+          # tweepy v2 Client
+          client = tweepy.Client(
+              consumer_key=api_key,
+              consumer_secret=api_secret,
+              access_token=access_token,
+              access_token_secret=access_secret,
+          )
 
           for article in articles:
               slug = article["slug"]
@@ -194,9 +160,21 @@ jobs:
                   tweet_text = f"{emoji} {title}\n\n{url}\n\n{hashtags}"
 
               print(f"\nPosting: {tweet_text[:100]}...")
-              post_tweet(tweet_text)
+              try:
+                  resp = client.create_tweet(text=tweet_text)
+                  tweet_id = resp.data["id"]
+                  print(f"  ✓ Tweet posted (ID: {tweet_id})")
+                  print(f"  → https://x.com/i/status/{tweet_id}")
+              except tweepy.errors.Forbidden as e:
+                  print(f"  ✗ Forbidden (403): {e}")
+                  print("  → アプリの権限が 'Read and Write' になっているか確認してください")
+              except tweepy.errors.TooManyRequests as e:
+                  print(f"  ✗ Rate limited (429): {e}")
+                  break
+              except Exception as e:
+                  print(f"  ✗ Tweet failed: {e}")
 
-              time.sleep(5)  # API rate limit対策
+              time.sleep(5)
 
           print("\nDone!")
           PYEOF
