@@ -3,7 +3,7 @@ title: "Chromeブックマークを毎日自動整理するPythonスクリプト
 emoji: "🔖"
 type: "tech"
 topics: ["python", "chrome", "wsl2", "automation", "cron"]
-published: false
+published: true
 ---
 
 ## TL;DR
