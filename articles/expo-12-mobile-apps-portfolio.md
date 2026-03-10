@@ -3,7 +3,7 @@ title: "Expo + TypeScriptでモバイルアプリ12本を量産した話"
 emoji: "📱"
 type: "tech"
 topics: ["reactnative", "expo", "typescript", "mobile"]
-published: false
+published: true
 ---
 
 ## TL;DR
