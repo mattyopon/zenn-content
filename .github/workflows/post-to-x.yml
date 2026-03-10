@@ -1,0 +1,209 @@
+name: Post to X (Twitter)
+
+on:
+  # gradual-publish完了後にトリガー
+  workflow_run:
+    workflows: ["Gradual Publish"]
+    types: [completed]
+  workflow_dispatch: # 手動実行も可能
+
+permissions:
+  contents: read
+
+jobs:
+  post-to-x:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # 直前のコミットとの差分を取るため
+
+      - name: Find newly published articles
+        id: find-articles
+        run: |
+          python3 << 'PYEOF'
+          import subprocess, re, os, json
+
+          # 直前のコミットで published: false → true に変わったファイルを検出
+          result = subprocess.run(
+              ["git", "diff", "HEAD~1", "HEAD", "--name-only", "--", "articles/"],
+              capture_output=True, text=True
+          )
+          changed_files = [f.strip() for f in result.stdout.strip().split("\n") if f.strip()]
+
+          if not changed_files:
+              print("No changed article files found.")
+              with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a") as gh:
+                  gh.write("articles_json=[]\n")
+                  gh.write("has_articles=false\n")
+              exit(0)
+
+          articles = []
+          for filepath in changed_files:
+              if not filepath.endswith(".md"):
+                  continue
+              try:
+                  with open(filepath, "r") as f:
+                      content = f.read()
+              except FileNotFoundError:
+                  continue
+
+              # published: true の記事だけ対象
+              if not re.search(r"^published:\s*true\s*$", content, re.MULTILINE):
+                  continue
+
+              # diff で published: false → true の変更があるか確認
+              diff_result = subprocess.run(
+                  ["git", "diff", "HEAD~1", "HEAD", "--", filepath],
+                  capture_output=True, text=True
+              )
+              if "-published: false" not in diff_result.stdout:
+                  continue
+
+              # frontmatterからタイトルとトピックを取得
+              title_match = re.search(r'^title:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
+              topics_match = re.search(r'^topics:\s*\[(.+?)\]', content, re.MULTILINE)
+              emoji_match = re.search(r'^emoji:\s*"?(.+?)"?\s*$', content, re.MULTILINE)
+
+              title = title_match.group(1).strip('"') if title_match else "New Article"
+              topics = topics_match.group(1) if topics_match else ""
+              emoji = emoji_match.group(1).strip('"') if emoji_match else ""
+
+              # スラッグからZenn URLを生成
+              slug = filepath.replace("articles/", "").replace(".md", "")
+
+              # トピックをハッシュタグに変換
+              hashtags = []
+              if topics:
+                  for t in re.findall(r'"([^"]+)"', topics):
+                      tag = t.strip().replace(" ", "").replace("-", "")
+                      if tag:
+                          hashtags.append(f"#{tag}")
+
+              hashtags.append("#Zenn")
+
+              articles.append({
+                  "slug": slug,
+                  "title": title,
+                  "emoji": emoji,
+                  "hashtags": " ".join(hashtags[:5]),  # 最大5つ
+              })
+
+          print(f"Found {len(articles)} newly published article(s)")
+          for a in articles:
+              print(f"  - {a['title']}")
+
+          with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a") as gh:
+              gh.write(f"articles_json={json.dumps(articles, ensure_ascii=False)}\n")
+              gh.write(f"has_articles={'true' if articles else 'false'}\n")
+          PYEOF
+
+      - name: Get Zenn username
+        id: zenn-user
+        if: steps.find-articles.outputs.has_articles == 'true'
+        run: |
+          # リポジトリ名からZennユーザー名を推定、またはsecretから取得
+          ZENN_USER="${{ secrets.ZENN_USERNAME }}"
+          if [ -z "$ZENN_USER" ]; then
+            ZENN_USER="mattyopon"
+          fi
+          echo "username=$ZENN_USER" >> "$GITHUB_OUTPUT"
+
+      - name: Post to X
+        if: steps.find-articles.outputs.has_articles == 'true'
+        run: |
+          python3 << 'PYEOF'
+          import json, os, sys
+          from urllib.request import urlopen, Request
+          from urllib.parse import quote
+          import hmac, hashlib, base64, time, uuid
+
+          articles_json = os.environ.get("ARTICLES_JSON", "[]")
+          zenn_user = os.environ.get("ZENN_USER", "mattyopon")
+
+          api_key = os.environ.get("X_API_KEY", "")
+          api_secret = os.environ.get("X_API_SECRET", "")
+          access_token = os.environ.get("X_ACCESS_TOKEN", "")
+          access_secret = os.environ.get("X_ACCESS_TOKEN_SECRET", "")
+
+          if not all([api_key, api_secret, access_token, access_secret]):
+              print("⚠ X API credentials not configured. Skipping.")
+              print("Set these repository secrets: X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET")
+              sys.exit(0)
+
+          articles = json.loads(articles_json)
+
+          def percent_encode(s):
+              return quote(str(s), safe="")
+
+          def create_oauth_signature(method, url, params, consumer_secret, token_secret):
+              sorted_params = "&".join(f"{percent_encode(k)}={percent_encode(v)}" for k, v in sorted(params.items()))
+              base_string = f"{method}&{percent_encode(url)}&{percent_encode(sorted_params)}"
+              signing_key = f"{percent_encode(consumer_secret)}&{percent_encode(token_secret)}"
+              signature = hmac.new(signing_key.encode(), base_string.encode(), hashlib.sha256)
+              return base64.b64encode(signature.digest()).decode()
+
+          def post_tweet(text):
+              url = "https://api.x.com/2/tweets"
+              oauth_params = {
+                  "oauth_consumer_key": api_key,
+                  "oauth_nonce": uuid.uuid4().hex,
+                  "oauth_signature_method": "HMAC-SHA256",
+                  "oauth_timestamp": str(int(time.time())),
+                  "oauth_token": access_token,
+                  "oauth_version": "1.0",
+              }
+              signature = create_oauth_signature("POST", url, oauth_params, api_secret, access_secret)
+              oauth_params["oauth_signature"] = signature
+
+              auth_header = "OAuth " + ", ".join(
+                  f'{percent_encode(k)}="{percent_encode(v)}"'
+                  for k, v in sorted(oauth_params.items())
+              )
+
+              body = json.dumps({"text": text}).encode()
+              req = Request(url, data=body, method="POST")
+              req.add_header("Authorization", auth_header)
+              req.add_header("Content-Type", "application/json")
+
+              try:
+                  resp = urlopen(req, timeout=15)
+                  result = json.loads(resp.read())
+                  tweet_id = result.get("data", {}).get("id", "unknown")
+                  print(f"  ✓ Tweet posted (ID: {tweet_id})")
+                  return True
+              except Exception as e:
+                  print(f"  ✗ Tweet failed: {e}")
+                  return False
+
+          for article in articles:
+              slug = article["slug"]
+              title = article["title"]
+              emoji = article["emoji"]
+              hashtags = article["hashtags"]
+              url = f"https://zenn.dev/{zenn_user}/articles/{slug}"
+
+              tweet_text = f"{emoji} {title}\n\n{url}\n\n{hashtags}"
+
+              # 280文字制限チェック（URLは23文字でカウント）
+              display_len = len(f"{emoji} {title}\n\n") + 23 + len(f"\n\n{hashtags}")
+              if display_len > 280:
+                  max_title = 280 - 23 - len(f"{emoji} \n\n\n\n{hashtags}")
+                  title = title[:max_title-3] + "..."
+                  tweet_text = f"{emoji} {title}\n\n{url}\n\n{hashtags}"
+
+              print(f"\nPosting: {tweet_text[:100]}...")
+              post_tweet(tweet_text)
+
+              time.sleep(5)  # API rate limit対策
+
+          print("\nDone!")
+          PYEOF
+        env:
+          ARTICLES_JSON: ${{ steps.find-articles.outputs.articles_json }}
+          ZENN_USER: ${{ steps.zenn-user.outputs.username }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}

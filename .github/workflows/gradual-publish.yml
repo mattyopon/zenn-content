@@ -2,8 +2,9 @@ name: Gradual Publish
 
 on:
   schedule:
-    # 毎日 00:00 UTC（JST 09:00）に実行
+    # 毎日 00:00 UTC（JST 09:00）と 12:00 UTC（JST 21:00）に実行
     - cron: '0 0 * * *'
+    - cron: '0 12 * * *'
   workflow_dispatch: # 手動実行も可能
 
 permissions:
@@ -15,35 +16,190 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Publish up to 3 draft articles
+      - name: Publish draft articles (with rate limit awareness)
+        id: publish
         run: |
-          python3 -c "
-          import glob, re
+          python3 << 'PYEOF'
+          import glob, re, json, os, subprocess
+          from datetime import datetime, timezone, timedelta
+          from urllib.request import urlopen, Request
+          from urllib.error import URLError, HTTPError
+          import time
 
-          files = sorted(glob.glob('articles/*.md'))
-          count = 0
+          MAX_PER_RUN = 2         # 1回の実行で公開する最大数
+          VERIFY_DELAY_SEC = 30   # Zenn反映待ち時間
+          PUBLISH_LOG = ".publish-log.json"
+
+          # --- 公開ログ管理 ---
+          def load_log():
+              if os.path.exists(PUBLISH_LOG):
+                  with open(PUBLISH_LOG) as f:
+                      return json.load(f)
+              return {"published": []}
+
+          def save_log(log):
+              with open(PUBLISH_LOG, "w") as f:
+                  json.dump(log, f, indent=2, ensure_ascii=False)
+
+          def published_today(log):
+              today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+              return sum(1 for e in log["published"] if e.get("date", "").startswith(today))
+
+          # --- Zenn APIでスラッグから記事の公開状態を確認 ---
+          def extract_slug(filepath):
+              """ファイル名からスラッグを取得"""
+              return os.path.splitext(os.path.basename(filepath))[0]
+
+          def verify_on_zenn(slug, retries=2):
+              """Zenn APIで記事がアクセス可能か確認"""
+              # Zennのユーザー名を取得（articles配列からpublished記事のURLで推定）
+              url = f"https://zenn.dev/api/articles/{slug}"
+              for attempt in range(retries):
+                  try:
+                      req = Request(url, headers={"User-Agent": "ZennGradualPublisher/1.0"})
+                      resp = urlopen(req, timeout=10)
+                      data = json.loads(resp.read())
+                      # 記事データが返ってくれば公開成功
+                      if data.get("article", {}).get("slug") == slug:
+                          return True
+                  except HTTPError as e:
+                      if e.code == 429:
+                          print(f"  ⚠ Rate limited (HTTP 429). Stopping.")
+                          return False
+                      elif e.code == 404:
+                          # まだ反映されていない可能性
+                          if attempt < retries - 1:
+                              print(f"  → 未反映、{VERIFY_DELAY_SEC}秒後にリトライ...")
+                              time.sleep(VERIFY_DELAY_SEC)
+                              continue
+                          return None  # 確認不能（反映待ち）
+                  except Exception as e:
+                      print(f"  → 確認エラー: {e}")
+                      return None
+              return None
+
+          # --- メイン処理 ---
+          log = load_log()
+          today_count = published_today(log)
+          max_daily = 3  # 1日の合計上限（全実行合算）
+          remaining = max_daily - today_count
+          to_publish = min(MAX_PER_RUN, remaining)
+
+          print(f"=== Gradual Publish ===")
+          print(f"本日の公開済み: {today_count}/{max_daily}")
+          print(f"今回の公開予定: 最大{to_publish}件")
+
+          if to_publish <= 0:
+              print("本日の上限に達しています。スキップ。")
+              exit(0)
+
+          # 下書き記事を検索（ファイル名ソート）
+          files = sorted(glob.glob("articles/*.md"))
+          drafts = []
           for f in files:
-              if count >= 3:
-                  break
-              with open(f, 'r') as fh:
+              with open(f, "r") as fh:
                   content = fh.read()
-              if re.search(r'^published:\s*false\s*$', content, re.MULTILINE):
-                  new_content = re.sub(r'^published:\s*false\s*$', 'published: true', content, count=1, flags=re.MULTILINE)
-                  with open(f, 'w') as fh:
-                      fh.write(new_content)
-                  print(f'Published: {f}')
-                  count += 1
-          if count == 0:
-              print('No draft articles found.')
+              if re.search(r"^published:\s*false\s*$", content, re.MULTILINE):
+                  drafts.append(f)
+
+          print(f"下書き記事数: {len(drafts)}")
+
+          if not drafts:
+              print("公開する下書き記事がありません。")
+              exit(0)
+
+          published_files = []
+          rate_limited = False
+
+          for f in drafts[:to_publish]:
+              slug = extract_slug(f)
+              print(f"\n--- 公開中: {slug} ---")
+
+              with open(f, "r") as fh:
+                  content = fh.read()
+
+              new_content = re.sub(
+                  r"^published:\s*false\s*$",
+                  "published: true",
+                  content,
+                  count=1,
+                  flags=re.MULTILINE,
+              )
+
+              with open(f, "w") as fh:
+                  fh.write(new_content)
+
+              published_files.append(f)
+
+              # ログに記録
+              log["published"].append({
+                  "file": f,
+                  "slug": slug,
+                  "date": datetime.now(timezone.utc).isoformat(),
+              })
+
+              print(f"  ✓ {f} → published: true")
+
+          # ログを保存（古いエントリは90日で削除）
+          cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
+          log["published"] = [e for e in log["published"] if e.get("date", "") > cutoff]
+          save_log(log)
+
+          # 結果出力
+          if published_files:
+              print(f"\n=== 結果: {len(published_files)}件を公開 ===")
+              for f in published_files:
+                  print(f"  ✓ {f}")
+              # GitHub Actions output
+              with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a") as gh:
+                  gh.write(f"published_count={len(published_files)}\n")
+                  slugs = ",".join(extract_slug(f) for f in published_files)
+                  gh.write(f"published_slugs={slugs}\n")
           else:
-              print(f'Published {count} article(s).')
-          "
+              print("\n公開した記事はありません。")
+          PYEOF
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add articles/
+          git add articles/ .publish-log.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "Publish draft articles ($(date +%Y-%m-%dT%H:%M UTC))"
           git push
+
+      - name: Verify on Zenn (post-push)
+        if: steps.publish.outputs.published_count != ''
+        run: |
+          echo "Waiting 60s for Zenn to sync from GitHub..."
+          sleep 60
+          python3 << 'PYEOF'
+          import os, json
+          from urllib.request import urlopen, Request
+          from urllib.error import HTTPError
+
+          slugs = os.environ.get("PUBLISHED_SLUGS", "").split(",")
+          for slug in slugs:
+              if not slug:
+                  continue
+              url = f"https://zenn.dev/api/articles/{slug}"
+              try:
+                  req = Request(url, headers={"User-Agent": "ZennGradualPublisher/1.0"})
+                  resp = urlopen(req, timeout=10)
+                  data = json.loads(resp.read())
+                  if data.get("article"):
+                      print(f"  ✓ {slug}: Zennで公開確認OK")
+                  else:
+                      print(f"  ? {slug}: レスポンスあるが記事データなし")
+              except HTTPError as e:
+                  if e.code == 429:
+                      print(f"  ⚠ {slug}: Rate limited (429) - 次回以降の公開数を減らすことを検討")
+                  elif e.code == 404:
+                      print(f"  ? {slug}: 未反映（Zenn同期に時間がかかっている可能性）")
+                  else:
+                      print(f"  ✗ {slug}: HTTP {e.code}")
+              except Exception as e:
+                  print(f"  ✗ {slug}: {e}")
+          PYEOF
+        env:
+          PUBLISHED_SLUGS: ${{ steps.publish.outputs.published_slugs }}

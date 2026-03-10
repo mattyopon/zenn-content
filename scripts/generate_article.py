@@ -266,7 +266,7 @@ title: "{ja_title}"
 emoji: "{cfg['emoji']}"
 type: "tech"
 topics: {json.dumps(cfg['topics'])}
-published: true
+published: false
 ---
 
 ## 概要
