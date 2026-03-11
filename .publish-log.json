@@ -14,6 +14,16 @@
       "file": "articles/line-claude-bot-family-task-ai.md",
       "slug": "line-claude-bot-family-task-ai",
       "date": "2026-03-10T08:02:09.700423+00:00"
+    },
+    {
+      "file": "articles/sharewise-knowledge-sharing-platform.md",
+      "slug": "sharewise-knowledge-sharing-platform",
+      "date": "2026-03-11T01:43:28.678278+00:00"
+    },
+    {
+      "file": "articles/sre-monitoring-prometheus-grafana.md",
+      "slug": "sre-monitoring-prometheus-grafana",
+      "date": "2026-03-11T01:43:28.678727+00:00"
     }
   ]
 }
