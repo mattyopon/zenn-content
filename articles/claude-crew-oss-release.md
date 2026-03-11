@@ -3,7 +3,7 @@ title: "Claude Codeを24人のAI開発チームにするOSSを公開した ― G
 emoji: "🚀"
 type: "tech"
 topics: ["claudecode", "ai", "oss", "devops", "projectmanagement"]
-published: false
+published: true
 ---
 
 ## TL;DR

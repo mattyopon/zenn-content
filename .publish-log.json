@@ -24,6 +24,11 @@
       "file": "articles/sre-monitoring-prometheus-grafana.md",
       "slug": "sre-monitoring-prometheus-grafana",
       "date": "2026-03-11T01:43:28.678727+00:00"
+    },
+    {
+      "file": "articles/claude-crew-oss-release.md",
+      "slug": "claude-crew-oss-release",
+      "date": "2026-03-11T12:45:12.920765+00:00"
     }
   ]
 }
