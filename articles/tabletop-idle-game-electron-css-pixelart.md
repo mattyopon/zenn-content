@@ -3,7 +3,7 @@ title: "Electron + CSS box-shadowだけでデスクトップ常駐型放置RPG�
 emoji: "⚔️"
 type: "tech"
 topics: ["electron", "gamedev", "javascript", "css", "pixelart"]
-published: false
+published: true
 ---
 
 ## TL;DR
