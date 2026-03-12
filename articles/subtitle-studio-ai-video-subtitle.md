@@ -3,7 +3,7 @@ title: "Vrew代替のAI字幕ツールをゼロから作った話"
 emoji: "🎬"
 type: "tech"
 topics: ["ai", "react", "python", "ffmpeg"]
-published: false
+published: true
 ---
 
 ## TL;DR

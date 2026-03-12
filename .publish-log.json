@@ -29,6 +29,16 @@
       "file": "articles/claude-crew-oss-release.md",
       "slug": "claude-crew-oss-release",
       "date": "2026-03-11T12:45:12.920765+00:00"
+    },
+    {
+      "file": "articles/subtitle-studio-ai-video-subtitle.md",
+      "slug": "subtitle-studio-ai-video-subtitle",
+      "date": "2026-03-12T01:45:00.922292+00:00"
+    },
+    {
+      "file": "articles/xclone-fullstack-aws-eks.md",
+      "slug": "xclone-fullstack-aws-eks",
+      "date": "2026-03-12T01:45:00.922374+00:00"
     }
   ]
 }
