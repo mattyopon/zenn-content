@@ -110,5 +110,9 @@
   "claude-code-tech-debt-payoff.md": {
     "qiita_id": "3abe334c86ecfed55863",
     "title": "個人開発の\"技術的負債\"をClaude Codeに一括返済させた ― テスト壊れ・README無し・dead codeを4並行エージェントで修復"
+  },
+  "2026031322-claude-coworkmicrosoft-365-copilotcopil.md": {
+    "qiita_id": "ae7a1773cab8ef62a01c",
+    "title": "Claude CoworkがMicrosoft 365 Copilotに採用。「Copilot Cowork」としてリサーチプレビュー公開"
   }
 }
