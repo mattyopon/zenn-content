@@ -1,16 +1,16 @@
-name: Hourly Article Generator
+name: Daily Article Generator
 
 on:
   schedule:
-    # 毎時0分に実行 (1時間に1本)
-    - cron: '0 * * * *'
+    # 毎日 22:00 UTC (= JST 07:00) に1本生成
+    - cron: '0 22 * * *'
   workflow_dispatch:  # 手動実行も可能
 
 permissions:
   contents: write
 
 jobs:
-  generate-article:
+  generate-and-publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install httpx
+        run: pip install httpx tweepy
 
       - name: Restore generator state
         uses: actions/cache@v4
@@ -31,13 +31,173 @@ jobs:
           restore-keys: generator-state-
 
       - name: Generate article
-        run: python scripts/generate_article.py
+        id: generate
+        run: |
+          OUTPUT=$(python scripts/generate_article.py 2>&1)
+          echo "$OUTPUT"
+          FILEPATH=$(echo "$OUTPUT" | grep "Written:" | sed 's/Written: //')
+          if [ -n "$FILEPATH" ]; then
+            FILENAME=$(basename "$FILEPATH")
+            echo "filepath=$FILEPATH" >> $GITHUB_OUTPUT
+            echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+            TITLE=$(sed -n 's/^title: *"\(.*\)"/\1/p' "$FILEPATH" | head -1)
+            echo "title=$TITLE" >> $GITHUB_OUTPUT
+          else
+            echo "filepath=" >> $GITHUB_OUTPUT
+          fi
 
+      # ========================================
+      # Qiita投稿（メインプラットフォーム）
+      # ========================================
+      - name: Post to Qiita
+        if: steps.generate.outputs.filepath != '' && env.QIITA_TOKEN != ''
+        id: qiita
+        env:
+          QIITA_TOKEN: ${{ secrets.QIITA_TOKEN }}
+          FILEPATH: ${{ steps.generate.outputs.filepath }}
+          FILENAME: ${{ steps.generate.outputs.filename }}
+        run: |
+          python3 << 'PYEOF'
+          import json, urllib.request, re, sys, os
+
+          filepath = os.environ["FILEPATH"]
+          filename = os.environ["FILENAME"]
+          token = os.environ["QIITA_TOKEN"]
+
+          with open(filepath) as f:
+              content = f.read()
+
+          fm_match = re.search(r'^---\n(.*?)\n---\n', content, re.DOTALL)
+          if not fm_match:
+              print("No frontmatter", file=sys.stderr)
+              sys.exit(1)
+
+          fm = fm_match.group(1)
+          body = content[fm_match.end():]
+
+          title_m = re.search(r'title:\s*"(.+?)"', fm)
+          title = title_m.group(1) if title_m else "Untitled"
+
+          topics_m = re.search(r'topics:\s*\[(.+?)\]', fm)
+          topics = re.findall(r'"(\w[\w-]*)"', topics_m.group(1)) if topics_m else []
+          tags = [{"name": t} for t in topics[:5]]
+
+          data = json.dumps({
+              "title": title,
+              "body": body,
+              "tags": tags,
+              "private": False
+          }).encode("utf-8")
+
+          req = urllib.request.Request(
+              "https://qiita.com/api/v2/items",
+              data=data,
+              headers={
+                  "Authorization": f"Bearer {token}",
+                  "Content-Type": "application/json"
+              },
+              method="POST"
+          )
+
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  result = json.loads(resp.read())
+                  qiita_url = result["url"]
+                  qiita_id = result["id"]
+                  print(f"Posted to Qiita: {qiita_url}")
+
+                  # GitHub Actions output
+                  with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                      f.write(f"qiita_url={qiita_url}\n")
+                      f.write(f"qiita_id={qiita_id}\n")
+
+                  # マッピングファイル更新
+                  map_file = "scripts/qiita-article-map.json"
+                  mapping = {}
+                  try:
+                      with open(map_file) as f:
+                          mapping = json.load(f)
+                  except FileNotFoundError:
+                      pass
+                  mapping[filename] = {"qiita_id": qiita_id, "title": title}
+                  with open(map_file, "w") as f:
+                      json.dump(mapping, f, indent=2, ensure_ascii=False)
+                  print(f"Updated mapping: {filename} -> {qiita_id}")
+
+          except urllib.error.HTTPError as e:
+              error_body = e.read().decode()
+              print(f"HTTPError {e.code}: {error_body}", file=sys.stderr)
+              sys.exit(1)
+          PYEOF
+
+      # ========================================
+      # X (Twitter) 自動ツイート
+      # ========================================
+      - name: Post to X (Twitter)
+        if: steps.qiita.outputs.qiita_url != '' && env.X_API_KEY != ''
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          TITLE: ${{ steps.generate.outputs.title }}
+          QIITA_URL: ${{ steps.qiita.outputs.qiita_url }}
+        run: |
+          python3 << 'PYEOF'
+          import os, tweepy
+
+          client = tweepy.Client(
+              consumer_key=os.environ["X_API_KEY"],
+              consumer_secret=os.environ["X_API_SECRET"],
+              access_token=os.environ["X_ACCESS_TOKEN"],
+              access_token_secret=os.environ["X_ACCESS_SECRET"],
+          )
+
+          title = os.environ["TITLE"]
+          url = os.environ["QIITA_URL"]
+
+          # 280文字制限を考慮してツイート構成
+          tweet = f"📝 {title}\n\n{url}\n\n#Qiita #エンジニア"
+          if len(tweet) > 280:
+              max_title = 280 - len(url) - 30  # URL + ハッシュタグ + 改行分
+              tweet = f"📝 {title[:max_title]}…\n\n{url}\n\n#Qiita"
+
+          try:
+              r = client.create_tweet(text=tweet)
+              tweet_id = r.data["id"]
+              print(f"Tweeted: https://x.com/i/status/{tweet_id}")
+          except Exception as e:
+              print(f"Tweet failed (non-fatal): {e}")
+          PYEOF
+
+      # ========================================
+      # Slack通知
+      # ========================================
+      - name: Slack notification
+        if: steps.qiita.outputs.qiita_url != '' && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TITLE: ${{ steps.generate.outputs.title }}
+          QIITA_URL: ${{ steps.qiita.outputs.qiita_url }}
+        run: |
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$(python3 -c "
+          import json, os
+          msg = f\"📝 Qiita日次記事投稿完了\n• {os.environ['TITLE']}\n• {os.environ['QIITA_URL']}\"
+          print(json.dumps({'text': msg}))
+          ")"
+
+      # ========================================
+      # コミット & プッシュ
+      # ========================================
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add articles/ && git add -f scripts/.generator_state.json
+          # マッピングファイルもコミット（存在すれば）
+          [ -f scripts/qiita-article-map.json ] && git add scripts/qiita-article-map.json
           git diff --cached --quiet && echo "No new articles" && exit 0
           git commit -m "Add article ($(date +%Y-%m-%dT%H:%M UTC))"
           git push

@@ -1,0 +1,114 @@
+{
+  "2026031304-llmkarpathy-guidelines.md": {
+    "qiita_id": "d61990ed1d0e44bc952b",
+    "title": "LLMにコードを書かせるなら知っておきたい「Karpathy Guidelines」を解説する"
+  },
+  "tabletop-idle-game-electron-css-pixelart.md": {
+    "qiita_id": "6fe3735b1dfe4187389f",
+    "title": "Electron + CSS box-shadowだけでデスクトップ常駐型放置RPGを作った"
+  },
+  "css-micro-interactions-15.md": {
+    "qiita_id": "f236984833ef64e24e6b",
+    "title": "コピペで使える「心地よい動き」のCSS 15選 ― JSなし・純CSSマイクロインタラクション集"
+  },
+  "pure-css-animation-dawn-code.md": {
+    "qiita_id": "912d56e071d7bf40e498",
+    "title": "JavaScriptゼロ行。1,778行のCSSだけで「プログラマーの夜明け」を描いた"
+  },
+  "claude-code-autonomous-project-patrol.md": {
+    "qiita_id": "5d65a72689b7dc4b08ad",
+    "title": "Claude Codeに18プロジェクトを自律巡回させたら、放置されたgitの闇が全部片付いた"
+  },
+  "youtube-cross-poster-multi-platform.md": {
+    "qiita_id": "ea304e2856bb87ed5647",
+    "title": "YouTube動画をX/ニコニコ/Bilibiliに自動投稿するCLIツール"
+  },
+  "xclone-fullstack-aws-eks.md": {
+    "qiita_id": "88efe1aaf94fa463c900",
+    "title": "X(Twitter)クローンをTerraform + EKS + Ansible + GitHub Actionsでフルスタック構築し、SRE運用基盤まで整えた全記録"
+  },
+  "sre-monitoring-prometheus-grafana.md": {
+    "qiita_id": "51a6df3b407aa263cad5",
+    "title": "Prometheus + Grafana + Flask でSRE監視基盤デモを構築した"
+  },
+  "sharewise-knowledge-sharing-platform.md": {
+    "qiita_id": "4381b180975d24d2fe37",
+    "title": "信頼スコア付きナレッジ共有プラットフォームを作った"
+  },
+  "line-claude-bot-family-task-ai.md": {
+    "qiita_id": "0a3829a1a4b386bc522a",
+    "title": "Claude APIでLINE家族タスク管理Botを作った"
+  },
+  "kakei-coin-blockchain-household.md": {
+    "qiita_id": "2aee4789f7575fac09c1",
+    "title": "家計管理をブロックチェーンで実装してみた"
+  },
+  "interview-ai-coach-electron-app.md": {
+    "qiita_id": "770a30d0e776b589ded2",
+    "title": "AI面接練習アプリをElectron + Reactで作った"
+  },
+  "infrasim-virtual-chaos-engineering.md": {
+    "qiita_id": "7b20921217ffd7fd6219",
+    "title": "実インフラに触れずに障害シミュレーション！仮想カオスエンジニアリングツール InfraSim を作った"
+  },
+  "claw-empire-ai-agent-orchestrator.md": {
+    "qiita_id": "7a8b75dd1d3b487a8b86",
+    "title": "複数AIを統合管理するOSSを作った - Claw Empire"
+  },
+  "claude-crew-oss-release.md": {
+    "qiita_id": "ce339cfdbc3e1e9d0f91",
+    "title": "Claude Codeを24人のAI開発チームにするOSSを公開した ― GAFAM文化をコマンド1つでインストール"
+  },
+  "bilibili-goal-bar-obs-streaming.md": {
+    "qiita_id": "0c5f98c6e65343dd6e12",
+    "title": "Bilibili配信のギフト目標バーをElectron + WebSocketで作った"
+  },
+  "chrome-bookmark-organizer-extension.md": {
+    "qiita_id": "b52846b75da8f5bfc7df",
+    "title": "Chromeブックマーク自動整理の続編 ― ローカルJSON編集では同期に負ける問題をChrome拡張機能で解決した"
+  },
+  "chrome-bookmark-auto-organizer.md": {
+    "qiita_id": "378358a5ff4e99d3ce41",
+    "title": "Chromeブックマークを毎日自動整理するPythonスクリプトを作った（WSL2 + cron）"
+  },
+  "claude-code-mcp-sre-infrastructure.md": {
+    "qiita_id": "6a70c6861c2616e22d95",
+    "title": "Claude Code × MCPで「インフラを自然言語で操作」する ― SREが実戦投入した5つのMCPサーバー構成"
+  },
+  "claude-agent-team-mesh-architecture.md": {
+    "qiita_id": "617757466f8ce69d12b7",
+    "title": "Claude Agent Team v4.0 ― CLAUDE.md 63%削減・Hub→Mesh通信・視覚ダッシュボードの実装"
+  },
+  "claude-code-security-guardrails-sre.md": {
+    "qiita_id": "90c99c8b0d1e8c340a6f",
+    "title": "Claude Codeに本番環境を触らせる前に ― SRE視点で構築した5層セキュリティガードレール"
+  },
+  "claude-agent-team-auto-integration-pipeline.md": {
+    "qiita_id": "0b5253b7eef656f11ffb",
+    "title": "Claude Agent Team 進化録 ― Enterprise機能を無料で再現し、新機能を自動で取り込む仕組みを作った"
+  },
+  "subtitle-studio-ai-video-subtitle.md": {
+    "qiita_id": "1e9c3794decf44ebe2ed",
+    "title": "Vrew代替のAI字幕ツールをゼロから作った話"
+  },
+  "expo-12-mobile-apps-portfolio.md": {
+    "qiita_id": "edf959b83bb61c1d0b09",
+    "title": "Expo + TypeScriptでモバイルアプリ12本を量産した話"
+  },
+  "backpack-game-electron-phaser.md": {
+    "qiita_id": "95c003e2fc0941a700c2",
+    "title": "Electron + Phaserでインベントリ管理オートバトラーゲームを作った"
+  },
+  "2026030920-symphony---openaiai.md": {
+    "qiita_id": "ffabf559bce4e6dad9f6",
+    "title": "Symphony - OpenAIが発表したチケット駆動AI開発ツールについて"
+  },
+  "claude-agent-team-gafam-enterprise.md": {
+    "qiita_id": "f379136fd72e12068777",
+    "title": "Claude Codeで24ロール・10フェーズのAI開発チームを自動編成する ― GAFAM+Anthropicの開発フローを完全再現"
+  },
+  "claude-code-tech-debt-payoff.md": {
+    "qiita_id": "3abe334c86ecfed55863",
+    "title": "個人開発の\"技術的負債\"をClaude Codeに一括返済させた ― テスト壊れ・README無し・dead codeを4並行エージェントで修復"
+  }
+}
