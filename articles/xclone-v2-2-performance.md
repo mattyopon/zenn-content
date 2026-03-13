@@ -278,11 +278,21 @@ app.use("/api/auth/*", authLimiter);
 
 ### Graceful Degradation（耐障害性）
 
-```
-通常時:    Client → Hono → Redis（分散カウント）→ OK/429
-Redis障害: Client → Hono → Memory（ローカルカウント）→ OK/429
-                            ↑ 自動フォールバック（ログ出力）
-Redis復旧: Client → Hono → Redis（自動再接続）→ OK/429
+```mermaid
+graph TD
+    A[リクエスト] --> B{ティア判定}
+    B -->|anonymous| C[30 req/min]
+    B -->|authenticated| D[120 req/min]
+    B -->|premium| E[600 req/min]
+    C --> F{Redis 利用可能?}
+    D --> F
+    E --> F
+    F -->|Yes| G[Redis Sliding Window<br/>分散カウント]
+    F -->|No| H[In-Memory<br/>ローカルカウント]
+    G --> I{制限内?}
+    H --> I
+    I -->|Yes| J[✅ 許可]
+    I -->|No| K[❌ 429 Too Many Requests]
 ```
 
 - Redis接続不能時は**自動的にインメモリにフォールバック**
@@ -314,6 +324,15 @@ Upload                  │         CloudFront CDN          │
 **処理フロー:**
 1. **アップロード時**: `image-processor.ts` がバリデーション + blurhash生成 + S3保存
 2. **配信時**: Lambda@Edge がAcceptヘッダーからWebP/AVIF対応を判定し、オンザフライ変換
+
+```mermaid
+graph LR
+    A[Upload] --> B[image-processor<br/>検証 / blurhash / メタデータ]
+    B --> C[S3]
+    C --> D[CloudFront CDN]
+    D --> E[Lambda@Edge<br/>Accept解析 / リサイズ<br/>WebP・AVIF変換]
+    E --> F[Client<br/>最適化済み画像]
+```
 
 ## 実装1: `apps/api/src/services/image-processor.ts`
 
@@ -833,18 +852,15 @@ export function createRealtimeAdapter(
 
 ### マルチリージョン通信フロー
 
-```
-東京リージョン                          バージニアリージョン
-┌─────────────────┐                    ┌─────────────────┐
-│ User A (東京)   │                    │ User B (US)     │
-│   ↓ tweet       │                    │                 │
-│ API Pod         │                    │ API Pod         │
-│   ↓ emit        │                    │   ↑ emit        │
-│ Socket.io       │                    │ Socket.io       │
-│   ↓ publish     │                    │   ↑ subscribe   │
-│ ElastiCache     │ ── Global DS ──▶   │ ElastiCache     │
-│ (Primary)       │   <1ms latency     │ (Replica)       │
-└─────────────────┘                    └─────────────────┘
+```mermaid
+graph LR
+    subgraph 東京リージョン
+        A[Tokyo Pod<br/>Socket.io] --> B[Redis Primary<br/>ElastiCache]
+    end
+    B -->|Global Datastore<br/>レイテンシ &lt;1ms| C[Redis Replica<br/>ElastiCache]
+    subgraph バージニアリージョン
+        C --> D[Virginia Pod<br/>Socket.io]
+    end
 ```
 
 **ElastiCache Global Datastore** により、Redis Pub/Sub メッセージが**1ms以下のレイテンシ**でリージョン間を伝播します。

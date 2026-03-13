@@ -74,11 +74,15 @@ v2.3: DX・コスト最適化（本記事）
 
 ### フラグ評価の優先順位
 
-```
-1. User Override  → 特定ユーザーに強制ON/OFF（デバッグ用）
-2. Rule Match     → 条件マッチング（tier=premium, region=jp, etc.）
-3. % Rollout      → ユーザーIDハッシュによる段階的ロールアウト
-4. Default Value  → 上記全て不一致時のデフォルト値
+```mermaid
+graph TD
+    A[フラグリクエスト] --> B{User Override?}
+    B -->|あり| C[Override値を返却<br/>最高優先度]
+    B -->|なし| D{Rule Match?}
+    D -->|マッチ| E[ルール値を返却<br/>ターゲティング]
+    D -->|不一致| F{%Rollout?}
+    F -->|バケット内| G[ロールアウト値を返却]
+    F -->|バケット外| H[デフォルト値を返却]
 ```
 
 ## 実装: `apps/api/src/services/feature-flags.ts`
@@ -311,6 +315,15 @@ Phase 3 (将来): GraphQL Federation Gateway
   │                   ├──▶ Payment Subgraph          │
   │                   └──▶ Notification Subgraph     │
   └──────────────────────────────────────────────────┘
+```
+
+```mermaid
+graph TD
+    A[Client<br/>Next.js] --> B[AppSync Gateway<br/>GraphQL Federation]
+    B --> C[User Subgraph]
+    B --> D[Tweet Subgraph]
+    B --> E[Payment Subgraph]
+    B --> F[Notification Subgraph]
 ```
 
 ## 実装: `apps/api/src/graphql/schema.ts`

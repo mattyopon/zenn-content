@@ -375,18 +375,16 @@ test.describe("Search Page", () => {
 
 Google Testing Pyramid（70/20/10）に基づくテスト構成：
 
-```
-         ╱╲
-        ╱  ╲         E2E Tests (10%)
-       ╱ 28 ╲        Playwright × 3ブラウザ = 84実行
-      ╱──────╲
-     ╱        ╲       Integration Tests (20%)
-    ╱  tRPC +  ╲      API統合テスト（DB含む）
-   ╱  API tests ╲
-  ╱──────────────╲
- ╱                ╲    Unit Tests (70%)
-╱  Drizzle / Zod   ╲   スキーマ・バリデーション・ユーティリティ
-╱────────────────────╲
+```mermaid
+graph TD
+    E2E["🔺 E2E Tests（10%）<br/>28ケース × 3ブラウザ = 84実行<br/>Playwright"]
+    INT["🔶 Integration Tests（20%）<br/>tRPC + API統合テスト<br/>Hono test client"]
+    UNIT["🟩 Unit Tests（70%）<br/>Drizzle Schema / Zod / Utils<br/>Vitest"]
+    INFRA["🔧 Infra Tests<br/>7モジュール<br/>Terratest (Go)"]
+
+    E2E --> INT
+    INT --> UNIT
+    UNIT ~~~ INFRA
 ```
 
 | レイヤー | テスト数 | ツール | 実行環境 |

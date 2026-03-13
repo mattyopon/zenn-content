@@ -590,6 +590,15 @@ const data = await trpc.tweets.timeline.query({ limit: 20, cursor: "xxx" });
 // data.hasMore — boolean
 ```
 
+```mermaid
+graph LR
+    A[Drizzle Schema] -->|型推論| B[tRPC Router]
+    B -->|型推論| C[tRPC Client]
+    C -->|型推論| D[Next.js RSC]
+    style A fill:#e8f5e9
+    style D fill:#e3f2fd
+```
+
 **REST API は引き続き残す**理由:
 - tRPCはTypeScriptクライアント専用（モバイルアプリ、外部APIでは使えない）
 - REST APIは汎用的な公開API、tRPCは内部フロントエンド用
@@ -617,9 +626,12 @@ searchClient.index({ index: "tweets", body: tweet }).catch(console.error);
 
 ## CDC（Debezium）で解決
 
-```
-PostgreSQL  →  Debezium  →  Kafka  →  OpenSearch Sink
-  (WAL)        (CDC)       (Queue)    (Consumer)
+```mermaid
+graph LR
+    A[PostgreSQL<br/>WAL] --> B[Debezium<br/>CDC]
+    B --> C[Kafka<br/>Queue]
+    C --> D[OpenSearch Sink<br/>Consumer]
+    D --> E[OpenSearch]
 ```
 
 **CDCの仕組み:**

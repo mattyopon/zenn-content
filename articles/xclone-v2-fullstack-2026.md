@@ -92,6 +92,38 @@ xclone-v2/
 └── docker-compose.yml               # ローカル開発環境
 ```
 
+### システム全体アーキテクチャ
+
+```mermaid
+flowchart TB
+    Client["クライアント\n(Next.js 15)"]
+    CF["CloudFront\nCDN"]
+    EKS["EKS クラスター"]
+    Hono["Hono API Pods\n+ Linkerd sidecar"]
+    Aurora["Aurora\nServerless v2"]
+    Redis["ElastiCache\nRedis"]
+    OS["OpenSearch"]
+    S3["S3\n(メディア)"]
+    OTel["OTel Collector"]
+    DD["Datadog"]
+    NR["New Relic"]
+    GH["GitHub\nリポジトリ"]
+    ArgoCD["ArgoCD"]
+
+    Client -->|HTTPS| CF
+    CF -->|リクエスト転送| EKS
+    EKS --- Hono
+    Hono -->|Drizzle ORM| Aurora
+    Hono -->|セッション/キャッシュ| Redis
+    Hono -->|全文検索| OS
+    Hono -->|メディアアップロード| S3
+    Hono -->|トレース/メトリクス| OTel
+    OTel -->|デュアル出力| DD
+    OTel -->|デュアル出力| NR
+    GH -->|GitOps Sync| ArgoCD
+    ArgoCD -->|自動デプロイ| EKS
+```
+
 ---
 
 # Part 1: データベース設計 — Drizzle ORM で12テーブル
@@ -344,6 +376,21 @@ const app = new Hono<Env>();
 requestId → otel → timing → secureHeaders → cors → compress → logger → rateLimiter
 ```
 
+```mermaid
+flowchart LR
+    A["RequestId\n一意ID付与"] --> B["OTel\nスパン開始"]
+    B --> C["Timing\nServer-Timing"]
+    C --> D["SecureHeaders\nHSTS/CSP"]
+    D --> E["CORS\nクロスオリジン"]
+    E --> F["Compress\ngzip/brotli"]
+    F --> G["Logger\nリクエストログ"]
+    G --> H["RateLimiter\n流量制限"]
+    H --> I["Route Handler\nルート処理"]
+
+    style A fill:#e1f5fe
+    style I fill:#c8e6c9
+```
+
 1. **requestId** — 全リクエストに一意IDを付与（トレーシングの起点）
 2. **otel** — OpenTelemetryのスパン開始（他ミドルウェアの計測も含む）
 3. **timing** — Server-Timingヘッダーでパフォーマンス可視化
@@ -479,6 +526,42 @@ io.on("connection", (socket) => {
       │  refreshToken   │                  │
       │  (httpOnly)     │                  │
       │<────────────────│                  │
+```
+
+```mermaid
+sequenceDiagram
+    participant C as クライアント<br>(Next.js)
+    participant API as Hono API<br>(Bun)
+    participant DB as Aurora<br>(PostgreSQL)
+    participant OAuth as Google/GitHub
+
+    Note over C,DB: ログインフロー
+    C->>API: POST /auth/login {email, password}
+    API->>DB: SELECT user WHERE email=...
+    DB-->>API: user row
+    API->>API: bcrypt.compare(password, hash)
+    API->>DB: INSERT refresh_token
+    API-->>C: accessToken (JWT RS256)<br>+ Set-Cookie: refreshToken (httpOnly)
+
+    Note over C,OAuth: OAuthフロー
+    C->>OAuth: /oauth/google (リダイレクト)
+    OAuth-->>C: Authorization Code
+    C->>API: GET /oauth/google/callback?code=...
+    API->>OAuth: Code → Access Token 交換
+    OAuth-->>API: access_token
+    API->>OAuth: ユーザー情報取得
+    OAuth-->>API: profile
+    API->>DB: UPSERT user (googleId)
+    API->>DB: INSERT refresh_token
+    API-->>C: リダイレクト + accessToken + refreshToken
+
+    Note over C,DB: トークンリフレッシュ
+    C->>API: POST /auth/refresh (Cookie: refreshToken)
+    API->>DB: SELECT token WHERE hash=... AND expires > now
+    DB-->>API: stored token
+    API->>DB: DELETE old token
+    API->>DB: INSERT new refresh_token (Rotation)
+    API-->>C: 新 accessToken + 新 refreshToken
 ```
 
 ## JWT トークン生成
@@ -700,6 +783,30 @@ tweetsApp.post("/", authMiddleware, async (c) => {
 
   return c.json({ tweet }, 201);
 });
+```
+
+### データフロー（ツイート作成 → 検索）
+
+```mermaid
+flowchart LR
+    subgraph ツイート作成
+        C1["クライアント"] -->|POST /tweets| API1["Hono API"]
+        API1 -->|INSERT| PG["PostgreSQL\n(Aurora)"]
+        API1 -->|非同期 index| OS1["OpenSearch"]
+    end
+
+    subgraph "将来構成（CDC導入後）"
+        PG2["PostgreSQL"] -->|WAL| DEB["Debezium\nCDC"]
+        DEB -->|イベント| KFK["Kafka"]
+        KFK -->|コンシューマ| OS2["OpenSearch"]
+    end
+
+    subgraph 検索
+        C2["クライアント"] -->|GET /tweets/search?q=...| API2["Hono API"]
+        API2 -->|multi_match クエリ| OS3["OpenSearch"]
+        OS3 -->|ハイライト付き結果| API2
+        API2 -->|JSON レスポンス| C2
+    end
 ```
 
 ### 検索エンドポイント（OpenSearch multi_match）
@@ -1801,6 +1908,29 @@ Step 4: Pod強制削除 (30%)
                     │  Trigger  │
                     │ (ArgoCD)  │
                     └───────────┘
+```
+
+```mermaid
+flowchart TD
+    Push["git push\n(mainブランチ)"]
+    Lint["Lint & Type Check\n(ESLint + tsc)"]
+    Test["Test\n(PostgreSQL + Redis)"]
+    Sec["Security Scan\n(Trivy)"]
+    OPA["OPA Policy Check\n(Conftest 12ルール)"]
+    Build["Docker Build\n+ ECR Push"]
+    GitOps["GitOps Trigger\n(ArgoCD 自動Sync)"]
+
+    Push --> Lint
+    Push --> Sec
+    Push --> OPA
+    Lint --> Test
+    Sec --> Test
+    Test --> Build
+    OPA --> Build
+    Build --> GitOps
+
+    style Push fill:#fff3e0
+    style GitOps fill:#c8e6c9
 ```
 
 **CI（GitHub Actions）とCD（ArgoCD）の分離理由:**
