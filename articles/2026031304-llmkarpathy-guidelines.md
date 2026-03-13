@@ -3,7 +3,7 @@ title: "LLMにコードを書かせるなら知っておきたい「Karpathy Gui
 emoji: "🤖"
 type: "tech"
 topics: ["ai", "llm", "machinelearning", "python"]
-published: false
+published: true
 ---
 
 ## 概要

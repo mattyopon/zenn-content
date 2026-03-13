@@ -3,7 +3,7 @@ title: "Xクローン v2.1 — 振り返り5課題を全解消：E2Eテスト / 
 emoji: "🔧"
 type: "tech"
 topics: ["playwright", "trpc", "debezium", "terraform", "opensearch"]
-published: false
+published: true
 ---
 
 ## はじめに
