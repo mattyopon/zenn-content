@@ -45,9 +45,17 @@ published: true
 │  ├─ OIDC認証 (IAMアクセスキー完全排除)                           │
 │  └─ Canary デプロイ + 自動ロールバック                           │
 ├───────────────────────────────────────────────────────────────────┤
+│  🎨 画面設計 / UI・UX                                              │
+│  ├─ 画面一覧 (22画面) / ワイヤーフレーム                         │
+│  ├─ デザインシステム (カラー / タイポグラフィ / コンポーネント)   │
+│  └─ レスポンシブ設計 / アクセシビリティ (WCAG 2.1 AA)            │
+├───────────────────────────────────────────────────────────────────┤
 │  🖥️ アプリケーション                                              │
 │  ├─ React + TypeScript (フロントエンド)                          │
-│  └─ Express + PostgreSQL + Redis (バックエンド)                  │
+│  ├─ Express + PostgreSQL + Redis (バックエンド)                  │
+│  ├─ DB設計 (12テーブル / ER図 / インデックス戦略)                │
+│  ├─ 認証・認可 (JWT RS256 + OAuth 2.0 + Refresh Token)          │
+│  └─ 決済機能 (Stripe — サブスク + 投げ銭)                       │
 ├───────────────────────────────────────────────────────────────────┤
 │  📊 SRE / 可観測性                                               │
 │  ├─ Datadog: APM / Infrastructure / Log Management / Synthetics  │
@@ -248,6 +256,119 @@ resource "aws_wafv2_web_acl" "main" {
 }
 ```
 
+## 1.3 画面設計 — 全22画面
+
+ユーザー導線とAPIエンドポイントを対応させ、**漏れのない画面設計**を行っています。フリマアプリ（15画面）や勤怠管理アプリ（17画面）の開発経験を活かし、認証→メイン機能→設定の導線を体系的に整理しました。
+
+### 画面一覧
+
+| # | カテゴリ | 画面名 | URL パス | 主要API | 認証 |
+|---|---------|--------|---------|---------|------|
+| 1 | 認証 | ログイン | `/login` | `POST /api/auth/login` | 不要 |
+| 2 | 認証 | 新規登録 | `/register` | `POST /api/auth/register` | 不要 |
+| 3 | 認証 | メール認証 | `/verify-email/:token` | `POST /api/auth/verify` | 不要 |
+| 4 | 認証 | パスワードリセット | `/reset-password` | `POST /api/auth/reset` | 不要 |
+| 5 | 認証 | OAuth コールバック | `/auth/callback/:provider` | `GET /api/auth/oauth/callback` | 不要 |
+| 6 | タイムライン | ホーム | `/home` | `GET /api/timeline` | 必須 |
+| 7 | タイムライン | Explore（トレンド） | `/explore` | `GET /api/trends`, `GET /api/search` | 必須 |
+| 8 | タイムライン | 通知一覧 | `/notifications` | `GET /api/notifications` (WebSocket) | 必須 |
+| 9 | ツイート | ツイート詳細 | `/status/:id` | `GET /api/tweets/:id` | 必須 |
+| 10 | ツイート | ツイート作成モーダル | (モーダル) | `POST /api/tweets` | 必須 |
+| 11 | ツイート | リプライスレッド | `/status/:id` (展開) | `GET /api/tweets/:id/replies` | 必須 |
+| 12 | プロフィール | ユーザープロフィール | `/user/:username` | `GET /api/users/:username` | 必須 |
+| 13 | プロフィール | プロフィール編集 | `/settings/profile` | `PATCH /api/users/me` | 必須 |
+| 14 | プロフィール | フォロー / フォロワー一覧 | `/user/:username/followers` | `GET /api/users/:username/followers` | 必須 |
+| 15 | DM | メッセージ一覧 | `/messages` | `GET /api/dm/conversations` | 必須 |
+| 16 | DM | チャット画面 | `/messages/:conversationId` | WebSocket + `GET /api/dm/:id/messages` | 必須 |
+| 17 | 検索 | 検索結果 | `/search?q=` | `GET /api/search` | 必須 |
+| 18 | ブックマーク | ブックマーク一覧 | `/bookmarks` | `GET /api/bookmarks` | 必須 |
+| 19 | 設定 | アカウント設定 | `/settings/account` | `PATCH /api/users/me/account` | 必須 |
+| 20 | 設定 | プライバシー・セキュリティ | `/settings/privacy` | `PATCH /api/users/me/privacy` | 必須 |
+| 21 | 決済 | X Premium 購入 | `/settings/premium` | `POST /api/payments/subscribe` | 必須 |
+| 22 | 決済 | 投げ銭（Super Chat） | (モーダル) | `POST /api/payments/tip` | 必須 |
+
+### 画面遷移図
+
+```
+                    ┌─────────────────────────────────┐
+                    │         認証フロー               │
+                    │  ログイン ─→ メール認証           │
+                    │  新規登録 ─→ メール認証           │
+                    │  OAuth ──→ コールバック           │
+                    └──────────┬──────────────────────┘
+                               │ 認証成功
+                               ▼
+        ┌──────────────────────────────────────────────┐
+        │                 メインレイアウト               │
+        │  ┌────┐ ┌─────────────┐ ┌────────────────┐  │
+        │  │サイド│ │  ホーム TL   │ │ トレンド/検索  │  │
+        │  │バー  │ │  Explore     │ │ おすすめユーザー│  │
+        │  │      │ │  通知        │ │                │  │
+        │  │ ホーム│ │  検索結果    │ └────────────────┘  │
+        │  │ 検索 │ │  ブックマーク │                     │
+        │  │ 通知 │ │  プロフィール │                     │
+        │  │ DM  │ │  ツイート詳細 │                     │
+        │  │ 設定 │ │  設定各種     │                     │
+        │  └────┘ └─────────────┘                      │
+        └──────────────────────────────────────────────┘
+```
+
+## 1.4 UI/UX 設計
+
+### デザインシステム
+
+| 要素 | 設計 | 根拠 |
+|------|------|------|
+| **カラーパレット** | Primary: `#1DA1F2`, Dark: `#15202B`, Light: `#F7F9FA` | X(Twitter)公式ブランドカラーに準拠 |
+| **タイポグラフィ** | `Inter` (見出し) + `Noto Sans JP` (本文) | 可読性重視。日本語対応 |
+| **スペーシング** | 4px グリッドシステム (4/8/12/16/24/32/48px) | Tailwind CSS のスペーシング規約に準拠 |
+| **角丸** | ボタン: 9999px (pill), カード: 16px, アバター: 50% | X(Twitter)の柔らかいUI印象を踏襲 |
+| **ダークモード** | システム設定連動 + 手動切替 | `prefers-color-scheme` メディアクエリ対応 |
+
+### コンポーネント設計
+
+```
+components/
+├── ui/                          # 汎用UIコンポーネント
+│   ├── Button.tsx               # Primary / Secondary / Ghost / Danger
+│   ├── Avatar.tsx               # サイズ: sm(32px) / md(48px) / lg(128px)
+│   ├── Input.tsx                # Text / Password / Search (バリデーション統合)
+│   ├── Modal.tsx                # ツイート作成・決済・確認ダイアログ
+│   ├── Toast.tsx                # 成功 / エラー / 情報通知
+│   └── Spinner.tsx              # ローディング表示
+├── tweet/                       # ツイート関連
+│   ├── TweetCard.tsx            # ツイート表示（いいね/RT/リプライ/ブックマーク）
+│   ├── TweetComposer.tsx        # ツイート作成（画像添付・文字数カウント）
+│   ├── TweetThread.tsx          # リプライスレッド（再帰コンポーネント）
+│   └── TweetActions.tsx         # いいね・RT・共有のアクションバー
+├── layout/                      # レイアウト
+│   ├── Sidebar.tsx              # 左サイドバー（ナビゲーション）
+│   ├── RightPanel.tsx           # 右パネル（トレンド・おすすめ）
+│   ├── MobileBottomNav.tsx      # モバイル下部ナビ
+│   └── Header.tsx               # モバイルヘッダー
+└── auth/                        # 認証関連
+    ├── LoginForm.tsx            # ログインフォーム
+    ├── RegisterForm.tsx         # 新規登録フォーム（バリデーション付き）
+    └── OAuthButtons.tsx         # Google / GitHub ログインボタン
+```
+
+### レスポンシブ設計
+
+| ブレークポイント | 幅 | レイアウト | 対象 |
+|----------------|------|----------|------|
+| Mobile | `< 640px` | 1カラム + BottomNav | スマートフォン |
+| Tablet | `640px - 1024px` | 2カラム（サイド + メイン） | タブレット |
+| Desktop | `1024px - 1280px` | 2カラム + 縮小右パネル | 小型デスクトップ |
+| Wide | `> 1280px` | 3カラム（サイド + メイン + 右パネル） | フルデスクトップ |
+
+### アクセシビリティ (WCAG 2.1 AA 準拠)
+
+- **キーボードナビゲーション**: 全操作がTab + Enter + Escで完結します
+- **スクリーンリーダー**: `aria-label` / `aria-live` / `role` 属性を全インタラクティブ要素に設定しています
+- **コントラスト比**: テキスト 4.5:1 以上、大文字 3:1 以上を確保しています
+- **フォーカスインジケーター**: `:focus-visible` でキーボードフォーカス時のみ表示します
+- **画像代替テキスト**: アバターには`${displayName}のアイコン`、投稿画像には入力必須の`alt`属性を設定しています
+
 ---
 
 # Part 2: AWS マルチアカウント戦略
@@ -407,30 +528,111 @@ EXPOSE 8080
 
 ## 3.2 バックエンド — Express + PostgreSQL + Redis
 
-### DB設計 (ER図)
+### DB設計 — 12テーブル構成 (ER図)
+
+フリマアプリ（7テーブル・Stripe決済統合）や勤怠管理アプリ（5テーブル・承認ワークフロー）の設計経験を踏まえ、**正規化とパフォーマンスのバランス**を意識した設計にしています。
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│    users      │     │   tweets      │     │   follows     │
-├──────────────┤     ├──────────────┤     ├──────────────┤
-│ id (UUID PK)  │◄────│ user_id (FK)  │     │ follower_id   │──┐
-│ username      │     │ id (UUID PK)  │     │ following_id  │──┤
-│ email         │     │ content       │     │ created_at    │  │
-│ password_hash │     │ reply_to (FK) │──┐  └──────────────┘  │
-│ display_name  │     │ media_urls[]  │  │                     │
-│ bio           │     │ is_retweet    │  │  ┌──────────────┐  │
-│ avatar_url    │     │ created_at    │  │  │    likes      │  │
-│ created_at    │     └──────────────┘  │  ├──────────────┤  │
-└──────────────┘                        │  │ user_id (FK)  │──┘
-                                         │  │ tweet_id (FK) │──→ tweets.id
-                                         │  │ created_at    │
-                                         │  └──────────────┘
-                                         └── self-ref (リプライチェーン)
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│      users        │     │     tweets        │     │     follows       │
+├──────────────────┤     ├──────────────────┤     ├──────────────────┤
+│ id (UUID PK)      │◄────│ user_id (FK)      │     │ id (UUID PK)      │
+│ username (UNIQUE)  │     │ id (UUID PK)      │     │ follower_id (FK)  │──┐
+│ email (UNIQUE)     │     │ content (280字)   │     │ following_id (FK) │──┤
+│ password_hash      │     │ reply_to_id (FK)  │──┐  │ created_at        │  │
+│ display_name       │     │ retweet_of_id(FK) │  │  │ UNIQUE(f_er,f_ing)│  │
+│ bio                │     │ is_pinned         │  │  └──────────────────┘  │
+│ avatar_url         │     │ visibility        │  │                        │
+│ header_url         │     │ created_at        │  │  ┌──────────────────┐  │
+│ is_verified        │     │ deleted_at (soft) │  │  │      likes        │  │
+│ is_premium         │     └──────────────────┘  │  ├──────────────────┤  │
+│ role (user/admin)  │                            │  │ id (UUID PK)      │  │
+│ oauth_provider     │  ┌──────────────────┐     │  │ user_id (FK)      │──┘
+│ oauth_provider_id  │  │      media        │     │  │ tweet_id (FK)     │──→ tweets.id
+│ stripe_customer_id │  ├──────────────────┤     │  │ created_at        │
+│ premium_expires_at │  │ id (UUID PK)      │     │  │ UNIQUE(user,tweet)│
+│ email_verified_at  │  │ tweet_id (FK)     │──→  │  └──────────────────┘
+│ created_at         │  │ url (S3 + CDN)    │     │
+│ updated_at         │  │ type (image/video) │     │  ┌──────────────────┐
+│ deleted_at (soft)  │  │ width / height     │     │  │    bookmarks      │
+└──────────────────┘  │ alt_text           │     │  ├──────────────────┤
+                       │ order_index        │     │  │ id (UUID PK)      │
+                       │ created_at         │     │  │ user_id (FK)      │
+                       └──────────────────┘     │  │ tweet_id (FK)     │
+                                                  │  │ created_at        │
+┌──────────────────┐  ┌──────────────────┐     │  └──────────────────┘
+│   notifications   │  │    hashtags       │     │
+├──────────────────┤  ├──────────────────┤     │  ┌──────────────────┐
+│ id (UUID PK)      │  │ id (SERIAL PK)    │     │  │  direct_messages  │
+│ user_id (FK)      │  │ name (UNIQUE)     │     │  ├──────────────────┤
+│ actor_id (FK)     │  │ tweet_count       │     │  │ id (UUID PK)      │
+│ type (like/reply/ │  └──────┬───────────┘     │  │ sender_id (FK)    │
+│   follow/retweet/ │         │                  │  │ receiver_id (FK)  │
+│   mention/payment)│  ┌──────▼───────────┐     │  │ content           │
+│ tweet_id (FK,null)│  │  tweet_hashtags   │     │  │ is_read           │
+│ is_read           │  ├──────────────────┤     │  │ created_at        │
+│ created_at        │  │ tweet_id (FK)     │─────┘  └──────────────────┘
+└──────────────────┘  │ hashtag_id (FK)   │
+                       └──────────────────┘     ┌──────────────────┐
+                                                  │    payments       │
+┌──────────────────┐                              ├──────────────────┤
+│   refresh_tokens  │                              │ id (UUID PK)      │
+├──────────────────┤                              │ user_id (FK)      │
+│ id (UUID PK)      │                              │ type (premium/tip)│
+│ user_id (FK)      │                              │ amount (cents)    │
+│ token_hash        │                              │ currency (JPY/USD)│
+│ expires_at        │                              │ stripe_payment_id │
+│ revoked_at        │                              │ stripe_sub_id     │
+│ device_info       │                              │ target_user_id(FK)│
+│ created_at        │                              │ target_tweet_id   │
+└──────────────────┘                              │ status (pending/  │
+                                                   │  completed/failed)│
+                                                   │ created_at        │
+                                                   └──────────────────┘
+```
+
+### テーブル設計の意図
+
+| テーブル | レコード増加速度 | 設計意図 |
+|---------|----------------|---------|
+| `users` | 低（登録時のみ） | OAuth対応のため `oauth_provider` カラムを追加。Stripe顧客IDも保持します |
+| `tweets` | **高** | 論理削除（`deleted_at`）採用。ピン留め・可視性制御にも対応しています |
+| `follows` | 中 | `(follower_id, following_id)` の複合ユニーク制約で重複防止しています |
+| `likes` | **高** | `(user_id, tweet_id)` の複合ユニーク制約。勤怠管理アプリの打刻テーブル設計と同じ「1レコード = 1アクション」の原則を適用しています |
+| `media` | 中 | 1ツイートに最大4枚まで。`order_index` で表示順を制御します |
+| `hashtags` | 低 | `tweet_count` をカウンタキャッシュで保持し、トレンド計算を高速化しています |
+| `notifications` | **高** | `type` カラムでポリモーフィックに管理。WebSocket + polling のハイブリッド配信です |
+| `direct_messages` | 中 | Redis Pub/Sub で複数Pod間のリアルタイム配信に対応しています |
+| `payments` | 低 | Stripe の `payment_id` / `subscription_id` を外部キーとして保持します |
+| `refresh_tokens` | 中 | `device_info` でデバイスごとのセッション管理。勤怠管理アプリの承認ワークフローと同様、`revoked_at` で無効化を管理しています |
+
+### マイグレーション設計
+
+フリマアプリで採用したLaravel式のマイグレーション管理と同様、**バージョン管理されたDDL**で安全にスキーマ変更を行います。
+
+```
+migrations/
+├── 001_create_users.sql
+├── 002_create_tweets.sql
+├── 003_create_follows.sql
+├── 004_create_likes.sql
+├── 005_create_media.sql
+├── 006_create_hashtags.sql
+├── 007_create_tweet_hashtags.sql
+├── 008_create_notifications.sql
+├── 009_create_direct_messages.sql
+├── 010_create_bookmarks.sql
+├── 011_create_payments.sql
+├── 012_create_refresh_tokens.sql
+└── seed/
+    ├── 01_admin_user.sql          # 管理者ユーザー
+    ├── 02_test_users.sql          # テスト用10ユーザー
+    └── 03_sample_tweets.sql       # サンプルツイート100件
 ```
 
 ### インデックス戦略
 
-パフォーマンスを最大化するため、以下のインデックスを設計しています。
+パフォーマンスを最大化するため、クエリパターンに基づいたインデックスを設計しています。
 
 ```sql
 -- タイムライン取得: カーソルページネーションの高速化
@@ -447,7 +649,235 @@ CREATE MATERIALIZED VIEW tweet_stats AS
 SELECT tweet_id, COUNT(*) AS like_count
 FROM likes GROUP BY tweet_id;
 -- worker で5分ごとに REFRESH MATERIALIZED VIEW CONCURRENTLY を実行しています
+
+-- ハッシュタグトレンド: 直近1時間の集計用
+CREATE INDEX idx_tweet_hashtags_created ON tweet_hashtags (hashtag_id, created_at DESC);
+
+-- 通知一覧: ユーザーごとの未読優先ソート
+CREATE INDEX idx_notifications_user_unread ON notifications (user_id, is_read, created_at DESC);
+
+-- DM: 会話ごとの最新メッセージ
+CREATE INDEX idx_dm_conversation ON direct_messages (
+  LEAST(sender_id, receiver_id),
+  GREATEST(sender_id, receiver_id),
+  created_at DESC
+);
+
+-- 決済: ユーザーごとの履歴
+CREATE INDEX idx_payments_user ON payments (user_id, created_at DESC);
+
+-- Refresh Token: 有効トークンの高速検索
+CREATE INDEX idx_refresh_tokens_active ON refresh_tokens (token_hash)
+  WHERE revoked_at IS NULL AND expires_at > NOW();
 ```
+
+### 3.3 認証・認可設計
+
+フリマアプリ（Laravel Fortify + メール認証）・勤怠管理アプリ（ロールベースアクセス制御）での認証実装経験を基に、**JWT + OAuth 2.0 のハイブリッド認証基盤**を構築しています。
+
+#### 認証フロー全体像
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      認証フロー                                  │
+│                                                                  │
+│  ┌──────────┐     ┌──────────┐     ┌──────────────────────┐    │
+│  │  ログイン  │     │ OAuth 2.0 │     │    JWT トークン       │    │
+│  │  (Email/PW)│     │(Google/GH)│     │    発行・検証          │    │
+│  └─────┬────┘     └─────┬────┘     └──────────┬───────────┘    │
+│        │                 │                      │                │
+│        ▼                 ▼                      ▼                │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                   認証ミドルウェア                        │    │
+│  │  ┌───────────┐  ┌───────────┐  ┌────────────────────┐  │    │
+│  │  │ Rate Limit │  │ JWT検証    │  │ Refresh Token 自動 │  │    │
+│  │  │ (100/15min)│  │ (RS256)    │  │ ローテーション      │  │    │
+│  │  └───────────┘  └───────────┘  └────────────────────┘  │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│        │                                                         │
+│        ▼                                                         │
+│  ┌──────────────────────────────────────────────┐               │
+│  │               認可レイヤー                     │               │
+│  │  user   → ツイートCRUD / プロフィール編集     │               │
+│  │  premium → 長文ツイート / 動画投稿            │               │
+│  │  admin  → ユーザー管理 / レポート対応         │               │
+│  └──────────────────────────────────────────────┘               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### JWT 設計
+
+| 項目 | 設計 | 根拠 |
+|------|------|------|
+| アルゴリズム | RS256 (RSA + SHA-256) | 公開鍵検証でマイクロサービス間の認証が容易です |
+| Access Token 有効期限 | 15分 | 漏洩時のリスクを最小化します |
+| Refresh Token 有効期限 | 7日 | httpOnly + Secure + SameSite=Strict Cookie に格納します |
+| Token ローテーション | Refresh 使用時に新しいペアを発行 | トークン窃取時の被害拡大を防止します |
+| ブラックリスト | Redis に revoked token を TTL 付きで保存 | ログアウト・パスワード変更時に即時無効化します |
+
+#### OAuth 2.0 統合
+
+```typescript
+// Google / GitHub OAuth 2.0 認証エンドポイント
+router.get('/auth/oauth/:provider', (req, res) => {
+  const { provider } = req.params;  // 'google' | 'github'
+  const authUrl = oauthService.getAuthorizationUrl(provider, {
+    redirect_uri: `${BASE_URL}/auth/callback/${provider}`,
+    scope: provider === 'google'
+      ? 'openid email profile'
+      : 'read:user user:email',
+    state: crypto.randomBytes(32).toString('hex'),  // CSRF防止
+  });
+  res.redirect(authUrl);
+});
+
+// コールバック: プロバイダーからのトークン取得 → ユーザー作成/紐付け
+router.get('/auth/callback/:provider', async (req, res) => {
+  const { code, state } = req.query;
+  // 1. state検証 (CSRF防止)
+  // 2. Authorization Code → Access Token 交換
+  // 3. ユーザー情報取得 (email, name, avatar)
+  // 4. users テーブルで email 照合 → 既存なら紐付け、新規なら作成
+  // 5. JWT + Refresh Token 発行
+});
+```
+
+#### パスワードハッシュ化
+
+```typescript
+// bcrypt (cost factor 12) でハッシュ化
+import bcrypt from 'bcrypt';
+const SALT_ROUNDS = 12;  // ≈ 250ms on modern CPU
+
+const hashPassword = (plain: string) => bcrypt.hash(plain, SALT_ROUNDS);
+const verifyPassword = (plain: string, hash: string) => bcrypt.compare(plain, hash);
+```
+
+#### セキュリティ対策
+
+| 脅威 | 対策 | 実装 |
+|------|------|------|
+| **ブルートフォース** | レート制限 | 同一IP: 100リクエスト/15分、同一アカウント: 5回失敗で30分ロック |
+| **XSS** | httpOnly Cookie | Refresh Token は JavaScript からアクセス不可です |
+| **CSRF** | SameSite=Strict + CSRF Token | Cookie の SameSite 属性 + ダブルサブミット対策 |
+| **セッション固定** | Token ローテーション | ログイン成功時に全既存トークンを無効化します |
+| **トークン漏洩** | 短い有効期限 + 即時無効化 | Access Token 15分 + ログアウト時に Redis ブラックリスト |
+
+### 3.4 決済機能 — Stripe 統合
+
+フリマアプリでの Stripe 決済実装（クレジットカード + コンビニ払い）経験を活かし、**X Premium サブスクリプション**と**投げ銭（Super Chat）**を実装しています。
+
+#### 決済アーキテクチャ
+
+```
+┌─────────┐    ┌──────────┐    ┌──────────────┐    ┌─────────┐
+│  React   │───▶│ Express  │───▶│   Stripe API  │───▶│  Webhook │
+│ (フロント)│    │ (バック)  │    │  (Checkout /  │    │ (非同期) │
+│          │    │          │    │   Billing)    │    │          │
+│ Stripe.js│    │ stripe-  │    └──────────────┘    │ POST     │
+│ Elements │    │ node SDK │                         │ /webhook │
+└─────────┘    └──────────┘                         │ /stripe  │
+                                                     └────┬────┘
+                                                          │
+                                        ┌────────────────▼────────────────┐
+                                        │      Webhook イベント処理        │
+                                        │                                  │
+                                        │ checkout.session.completed       │
+                                        │   → payments テーブルに記録      │
+                                        │   → users.is_premium = true     │
+                                        │                                  │
+                                        │ invoice.payment_succeeded        │
+                                        │   → サブスク更新記録             │
+                                        │                                  │
+                                        │ customer.subscription.deleted    │
+                                        │   → Premium 解除処理            │
+                                        │                                  │
+                                        │ payment_intent.succeeded (投げ銭)│
+                                        │   → 通知 + payments テーブル記録 │
+                                        └─────────────────────────────────┘
+```
+
+#### X Premium サブスクリプション
+
+```typescript
+// Stripe Checkout Session 作成
+router.post('/api/payments/subscribe', authenticate, async (req, res) => {
+  const user = req.user;
+
+  // Stripe Customer 未作成なら作成
+  let customerId = user.stripe_customer_id;
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: user.email,
+      metadata: { user_id: user.id },
+    });
+    customerId = customer.id;
+    await db.query('UPDATE users SET stripe_customer_id = $1 WHERE id = $2',
+      [customerId, user.id]);
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    customer: customerId,
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    line_items: [{
+      price: process.env.STRIPE_PREMIUM_PRICE_ID,  // ¥980/月
+      quantity: 1,
+    }],
+    success_url: `${FRONTEND_URL}/settings/premium?success=true`,
+    cancel_url: `${FRONTEND_URL}/settings/premium?canceled=true`,
+    metadata: { user_id: user.id },
+  });
+
+  res.json({ checkout_url: session.url });
+});
+```
+
+#### 投げ銭（Super Chat）
+
+```typescript
+// PaymentIntent 作成（100円〜50,000円）
+router.post('/api/payments/tip', authenticate, async (req, res) => {
+  const { target_user_id, target_tweet_id, amount } = req.body;
+
+  // バリデーション: 100〜50,000円
+  if (amount < 100 || amount > 50000) {
+    return res.status(400).json({ error: '金額は100円〜50,000円で指定してください' });
+  }
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount,
+    currency: 'jpy',
+    customer: req.user.stripe_customer_id,
+    metadata: {
+      type: 'tip',
+      sender_id: req.user.id,
+      target_user_id,
+      target_tweet_id,
+    },
+  });
+
+  // payments テーブルに pending で記録
+  await db.query(`
+    INSERT INTO payments (user_id, type, amount, currency, stripe_payment_id,
+                          target_user_id, target_tweet_id, status)
+    VALUES ($1, 'tip', $2, 'JPY', $3, $4, $5, 'pending')
+  `, [req.user.id, amount, paymentIntent.id, target_user_id, target_tweet_id]);
+
+  res.json({ client_secret: paymentIntent.client_secret });
+});
+```
+
+#### Premium 特典
+
+| 特典 | 無料ユーザー | Premium ユーザー |
+|------|-------------|-----------------|
+| ツイート文字数 | 280文字 | 4,000文字 |
+| 動画投稿 | 2分 / 512MB | 60分 / 8GB |
+| 認証バッジ | なし | ブルーバッジ表示 |
+| 広告表示 | あり | 50%削減 |
+| ブックマークフォルダ | 1つ | 無制限 |
+| 投げ銭受取 | 不可 | 可能（手数料10%） |
 
 ### Secrets 管理 — External Secrets Operator
 
@@ -1090,8 +1520,12 @@ export default function () {
 
 | レイヤー | 技術 | 役割 |
 |---------|------|------|
-| フロントエンド | React + TypeScript + Vite + Tailwind | SPA、仮想スクロール、WebSocket通知 |
-| バックエンド | Express + PostgreSQL + Redis | REST API、JWT認証、全文検索、セッション管理 |
+| 画面設計 | 22画面 (認証5 + メイン8 + 設定4 + 決済2 + 他3) | 画面遷移図・ワイヤーフレーム・コンポーネント設計 |
+| UI/UX | Tailwind CSS + デザインシステム + WCAG 2.1 AA | レスポンシブ4段階・ダークモード・アクセシビリティ |
+| フロントエンド | React + TypeScript + Vite + Tailwind | SPA、仮想スクロール、Stripe.js Elements |
+| バックエンド | Express + PostgreSQL + Redis | REST API、12テーブルDB設計、全文検索 |
+| 認証・認可 | JWT RS256 + OAuth 2.0 (Google/GitHub) | Refresh Token ローテーション、ロール3段階 |
+| 決済 | Stripe Checkout + Billing + PaymentIntent | X Premium (¥980/月) + 投げ銭 (100〜50,000円) |
 | コンテナ | Docker + Kubernetes (EKS/GKE) | マルチステージビルド、HPA、PDB、NetworkPolicy |
 | IaC | Terraform (AWS + GCP) | VPC/EKS/RDS/GKE/Cloud SQL マルチクラウド |
 | 構成管理 | Ansible | CIS Benchmark準拠のセキュリティハードニング |
@@ -1104,9 +1538,43 @@ export default function () {
 | コスト | Savings Plans + Spot + Budgets | 月$750→$520 (30%削減) |
 | DR | Route 53 + GCP (GKE/Cloud SQL) | RTO<15分、RPO<5分 |
 
+## 他ポートフォリオとの技術的なつながり
+
+本プロジェクトの設計・実装には、過去に構築した以下のポートフォリオプロジェクトでの経験が直接活きています。
+
+### フリマアプリ — ECの認証・決済・DB設計
+
+| 要素 | フリマアプリでの実装 | → Xクローンへの応用 |
+|------|--------------------|--------------------|
+| **DB設計** | 7テーブル（users/items/likes/comments/purchases/categories/item_category） | 12テーブルへ拡張。多対多の中間テーブル設計を踏襲しています |
+| **認証** | Laravel Fortify + メール認証 | JWT RS256 + OAuth 2.0 に発展。メール認証フローはそのまま移植しています |
+| **決済** | Stripe Checkout + コンビニ払い | Stripe Billing (サブスク) + PaymentIntent (投げ銭) に拡張しています |
+| **画面数** | 15画面（認証4 + 商品管理5 + 購入4 + その他2） | 22画面。フリマの「商品 → 購入」導線を「ツイート → エンゲージメント」に転用しています |
+| **いいね機能** | `(user_id, item_id)` 複合ユニーク制約 | 同じパターンを `likes` / `bookmarks` テーブルに適用しています |
+
+### 勤怠管理アプリ — ワークフロー・ロール設計
+
+| 要素 | 勤怠管理アプリでの実装 | → Xクローンへの応用 |
+|------|--------------------|--------------------|
+| **ロール設計** | `role` カラム（0=一般, 1=管理者） | `role` カラム（user/premium/admin）に拡張。権限階層を3段階に設計しています |
+| **承認ワークフロー** | 修正申請 → 管理者承認（`stamp_correction_requests`） | レポート対応の管理者ワークフローに応用しています |
+| **状態管理** | 打刻ステータス（勤務中/休憩中/退勤済） | ツイートの `visibility` やアカウント状態管理に同じパターンを適用しています |
+| **CSV出力** | スタッフ別勤怠のCSVエクスポート | 管理者ダッシュボードのデータエクスポートに同機能を実装しています |
+| **画面数** | 17画面（一般7 + 管理者9 + 共通1） | 管理者UIの設計パターン（一覧→詳細→編集の導線）を参考にしています |
+
+### CloudBear ポートフォリオ — 実務のAWSインフラ経験
+
+放送・メディア業界で構築した**全15システム**のAWSインフラ設計経験が、本プロジェクトのインフラ設計に直結しています。
+
+- NHK紅白歌合戦の投票システム（Multi-Region + DynamoDB Global Tables）→ **Route 53 フェイルオーバー + GCP DR 設計**に応用
+- テレビ朝日ニュース配信（ECS + OpenSearch）→ **EKS + 全文検索のアーキテクチャ**に応用
+- AI縦型動画変換（Step Functions + MediaConvert）→ **メディアアップロード・変換パイプライン**の設計思想に応用
+
 ## この構築を通じて得られたもの
 
-SNSクローンという身近な題材ですが、**本番運用を想定したインフラ設計・SRE運用基盤・ドキュメント整備まで含めることで**、単に「コードが書ける」だけでなく **「サービスを設計し、構築し、運用できる」** エンジニアとしてのスキルセットを体系的に証明できるプロジェクトになったと考えています。
+SNSクローンという身近な題材ですが、**DB設計12テーブル・画面設計22画面・認証OAuth 2.0・決済Stripe統合・インフラTerraform+EKS・SRE運用基盤まで**を一気通貫で構築することで、**「要件定義から運用保守まで、一人でサービスを立ち上げられる」** エンジニアとしてのスキルセットを体系的に証明できるプロジェクトになったと考えています。
+
+特に、フリマアプリや勤怠管理アプリで積み上げたDB設計・認証・決済の経験を、クラウドネイティブなアーキテクチャに統合したことで、**「既存のWebアプリ開発経験 × インフラ・SREの専門性」** という掛け算のスキルを示せたと感じています。
 
 一方で、Part 10 に記載した通り、GitOps・Service Mesh・Chaos Engineering・OpenTelemetry 統一計装など、**業界の先端プラクティスとのギャップも明確に認識しています**。これらは今後の改善計画として順次取り組んでいく予定です。
 
