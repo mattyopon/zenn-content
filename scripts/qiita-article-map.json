@@ -158,5 +158,9 @@
   "xclone-v2-10-full-pass.md": {
     "qiita_id": "2bdbf8ab75fb8cc69c25",
     "title": "Xクローン v2.10 — 全サイドカー層CB完備で動的シミュレーション3,351シナリオ完全PASSED達成"
+  },
+  "2026031422-claude-code144-agency-agents40kai.md": {
+    "qiita_id": "de0f6cb20950fa5f375e",
+    "title": "簡単コピペでClaude Codeに144種類のエージェントチームを作成 ── agency-agentsという40Kスター超のAIエージェ"
   }
 }

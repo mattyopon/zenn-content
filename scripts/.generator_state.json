@@ -1,12 +1,13 @@
 {
   "published_urls": [
     "https://www.publickey1.jp/blog/26/claude_coworkmicrosoft_365_copilotcopilot_cowork.html",
-    "https://qiita.com/kotai2003/items/e88e7c247c6cb70c57dc?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items"
+    "https://qiita.com/kotai2003/items/e88e7c247c6cb70c57dc?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items",
+    "https://qiita.com/nogataka/items/5b5747f619e6eb745436?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items"
   ],
-  "last_run": "2026-03-13T22:36:07.303193+00:00",
+  "last_run": "2026-03-14T22:34:56.025831+00:00",
   "last_article": {
-    "title": "Claude CoworkがMicrosoft 365 Copilotに採用。「Copilot Cowork」としてリサーチプレビュー公開",
-    "slug": "2026031322-claude-coworkmicrosoft-365-copilotcopil",
+    "title": "簡単コピペでClaude Codeに144種類のエージェントチームを作成 ── agency-agentsという40Kスター超のAIエージェント集を使いこなす",
+    "slug": "2026031422-claude-code144-agency-agents40kai",
     "topic": "ai"
   }
 }
