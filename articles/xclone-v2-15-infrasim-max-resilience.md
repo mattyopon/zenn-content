@@ -3,7 +3,7 @@ title: "InfraSim Resilience Score 100/100達成 — Xクローンv12.0への道"
 emoji: "💯"
 type: "tech"
 topics: ["infrasim", "chaosengineering", "sre", "aws", "infrastructure"]
-published: false
+published: true
 ---
 
 ## はじめに
