@@ -111,8 +111,52 @@
     "qiita_id": "3abe334c86ecfed55863",
     "title": "個人開発の\"技術的負債\"をClaude Codeに一括返済させた ― テスト壊れ・README無し・dead codeを4並行エージェントで修復"
   },
-  "2026031322-claude-coworkmicrosoft-365-copilotcopil.md": {
-    "qiita_id": "ae7a1773cab8ef62a01c",
-    "title": "Claude CoworkがMicrosoft 365 Copilotに採用。「Copilot Cowork」としてリサーチプレビュー公開"
+  "xclone-v2-fullstack-2026.md": {
+    "qiita_id": "902aa019456836624081",
+    "title": "【2026年最新】Xクローン v2を最先端技術で再構築 — Hono+Bun / Next.js 15 RSC / Drizzle ORM / ArgoCD / Linkerd / OpenTelemetry の全設計と実装"
+  },
+  "xclone-v2-1-improvements.md": {
+    "qiita_id": "e44ee09728795595efaa",
+    "title": "Xクローン v2.1 — 振り返り5課題を全解消：E2Eテスト / OpenSearch ISM / マルチリージョン / tRPC / CDC(Debezium)"
+  },
+  "xclone-v2-2-performance.md": {
+    "qiita_id": "d858969cd6de808b8816",
+    "title": "Xクローン v2.2 — 分散レートリミット / 画像最適化パイプライン / マルチリージョンWebSocket"
+  },
+  "xclone-v2-3-dx-cost.md": {
+    "qiita_id": "cf78cb33e6e461cdc2b3",
+    "title": "Xクローン v2.3 — Feature Flag自前基盤 / GraphQL Federation移行パス / コスト最適化ダッシュボード"
+  },
+  "xclone-v2-4-testing.md": {
+    "qiita_id": "44b7fca8fc0d07298727",
+    "title": "Xクローン v2.4（最終回）— E2Eテスト拡充 + Terraformモジュール統合テストで品質100%へ"
+  },
+  "xclone-v2-5-chaos-testing.md": {
+    "qiita_id": "bfe98a49e07cc80dbf32",
+    "title": "Xクローン v2.5 — InfraSimカオステストで296シナリオ実行、レジリエンススコア0点からの改善ロードマップ"
+  },
+  "xclone-v2-6-resilience.md": {
+    "qiita_id": "817724b2936816f4f28c",
+    "title": "Xクローン v2.6 — WARNING 36→2件、4イテレーションのインフラ耐障害性強化と残るDDoSの壁"
+  },
+  "xclone-v2-7-perfect-resilience.md": {
+    "qiita_id": "e6b7431f90882d720de4",
+    "title": "Xクローン v2.7（最終回）— InfraSim 1,647シナリオ全PASSED、6ラウンドの改善でCRITICAL 0・WARNING 0を達成"
+  },
+  "xclone-v2-8-dynamic-simulation.md": {
+    "qiita_id": "7fe25ec900b0fb04404c",
+    "title": "Xクローン v2.8 — InfraSim v2.0: 動的トラフィックシミュレーション・オートスケーリング・フェイルオーバーで「定常状態の限界」を突破"
+  },
+  "xclone-v2-series-summary.md": {
+    "qiita_id": "06874c53048612ecbccf",
+    "title": "【完全版】Xクローン v2 シリーズ総まとめ — 10記事・7イテレーション・動的カオステスト1,695シナリオの全記録"
+  },
+  "xclone-v2-9-resilience-hardening.md": {
+    "qiita_id": "de69bc16207fce55c1c2",
+    "title": "Xクローン v2.9 — サーキットブレーカー＋Singleflight＋キャッシュウォーミングで動的シミュレーションWARNINGを解消"
+  },
+  "xclone-v2-10-full-pass.md": {
+    "qiita_id": "2bdbf8ab75fb8cc69c25",
+    "title": "Xクローン v2.10 — 全サイドカー層CB完備で動的シミュレーション3,351シナリオ完全PASSED達成"
   }
 }
