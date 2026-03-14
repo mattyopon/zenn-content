@@ -3,7 +3,7 @@ title: "Claude CoworkがMicrosoft 365 Copilotに採用。「Copilot Cowork」と
 emoji: "🤖"
 type: "tech"
 topics: ["ai", "llm", "machinelearning", "python"]
-published: false
+published: true
 ---
 
 ## 概要
