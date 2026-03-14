@@ -1,5 +1,5 @@
 ---
-title: "Xクローン v2.29 — 30日ストレステストでSLO 100.0%を達成した全記録"
+title: "Xクローン v2.29 — SLO 100%は嘘だった：フェイルオーバーの現実と99.9967%の真実"
 emoji: "💯"
 type: "tech"
 topics: ["infrastructure", "sre", "chaosengineering", "aws", "kubernetes"]
@@ -107,4 +107,40 @@ Aurora Primary が DOWN になっても、`failover.enabled = True` なら Repli
 InfraSim: **89/89 全テスト合格**
 Xclone 静的カオス: 1000/1000 PASSED
 Xclone 動的: 1175 シナリオ (CRITICAL 1 = total meltdown のみ)
-Xclone 運用: **全5シナリオ 100.00%**
+Xclone 運用: **全5シナリオ SLO 達成**
+
+## 追記: SLO 100% は嘘だった — v5.9 で修正
+
+v5.8 では「フェイルオーバー有効 = DEGRADED 扱い」としたことで 100.00% を出しましたが、**これは楽観的すぎました**。
+
+### なぜ 100% はあり得ないか
+
+1. **フェイルオーバーに時間がかかる**（5-30秒）— その間のリクエストは失敗
+2. **検出遅延**がある — ヘルスチェック間隔 × 閾値 = 10-30秒の検出遅れ
+3. **インフライトリクエスト**が失敗 — 切替中の処理中リクエストは rescue 不可
+4. **100% は数学的に不可能** — 1コンポーネントでも存在する限り障害確率 > 0
+
+### v5.9 の修正: fractional DOWN
+
+```python
+# フェイルオーバー中の影響を部分的DOWNとして計算
+promotion = comp.failover.promotion_time_seconds      # 例: 5s
+detection = health_interval * failover_threshold       # 例: 5s × 2 = 10s
+total_outage = promotion + detection                   # 15s
+impact_fraction = min(0.5, total_outage / 300.0)       # 15/300 = 0.05 (5%)
+```
+
+### 修正後の現実的な結果
+
+| シナリオ | v5.8 (楽観) | v5.9 (現実) |
+|---------|------------|------------|
+| 7日 baseline | 100.00% | **100.00%** (障害なし) |
+| 7日 deploys | 100.00% | **99.9997%** |
+| 7日 full ops | 100.00% | **99.9968%** |
+| 30日 stress | 100.00% | **99.9967%** |
+
+**99.9967% ≈ SLO 99.99% (four nines)** — これが Xclone v10.0 の本当の可用性です。
+
+### 教訓: ツールの嘘を見抜け
+
+シミュレーションツールが出す数字を鵜呑みにしてはいけない。**モデルの仮定が現実と合っているか**を常に問い直すこと。100% という数字が出た時点で「おかしい」と気づくべきだった。
