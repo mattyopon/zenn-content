@@ -3,7 +3,7 @@ title: "InfraSim evaluateコマンドで5エンジン一発評価 — Xクロー
 emoji: "📊"
 type: "tech"
 topics: ["infrasim", "chaosengineering", "sre", "aws", "infrastructure"]
-published: false
+published: true
 ---
 
 ## TL;DR
