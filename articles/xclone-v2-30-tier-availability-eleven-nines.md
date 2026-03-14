@@ -3,7 +3,7 @@ title: "Xクローン v2.30 — サービスティア可用性計算を実装し
 emoji: "🎯"
 type: "tech"
 topics: ["infrastructure", "sre", "chaosengineering", "python", "aws"]
-published: true
+published: false
 ---
 
 ## はじめに
