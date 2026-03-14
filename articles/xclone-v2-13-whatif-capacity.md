@@ -1,5 +1,5 @@
 ---
-title: "XClone v2.13: InfraSim v4.0 What-if Analysis & Capacity Planning — SLOブレークポイント分析"
+title: "XClone v2.13: InfraSim v4.0 What-if & Capacity Planning"
 emoji: "📊"
 type: "tech"
 topics: ["infrasim", "sre", "capacityplanning", "slo", "infrastructure"]

@@ -1,5 +1,5 @@
 ---
-title: "X(Twitter)クローンをTerraform + EKS + Ansible + GitHub Actionsでフルスタック構築し、SRE運用基盤まで整えた全記録"
+title: "XクローンをTerraform + EKS + GitHub Actionsでフルスタック構築した全記録"
 emoji: "🐦"
 type: "tech"
 topics: ["terraform", "kubernetes", "aws", "sre", "datadog"]

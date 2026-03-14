@@ -1,5 +1,5 @@
 ---
-title: "Xクローン v2.1 — 振り返り5課題を全解消：E2Eテスト / OpenSearch ISM / マルチリージョン / tRPC / CDC(Debezium)"
+title: "Xクローン v2.1 — 振り返り5課題を全解消：E2E / OpenSearch / tRPC / CDC"
 emoji: "🔧"
 type: "tech"
 topics: ["playwright", "trpc", "debezium", "terraform", "opensearch"]

@@ -1,5 +1,5 @@
 ---
-title: '個人開発の"技術的負債"をClaude Codeに一括返済させた ― テスト壊れ・README無し・dead codeを4並行エージェントで修復'
+title: '個人開発の"技術的負債"をClaude Codeで一括返済 ― 4並行エージェントで修復'
 emoji: "🏗️"
 type: "tech"
 topics: ["claudecode", "ai", "テスト", "個人開発", "技術的負債"]

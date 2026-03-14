@@ -1,5 +1,5 @@
 ---
-title: "Xクローン v2.11 — InfraSim v3.0: 本番運用シミュレーション（SLOトラッキング・Error Budget・段階的劣化モデル）"
+title: "Xクローン v2.11 — InfraSim v3.0: 本番運用シミュレーション（SLO・Error Budget）"
 emoji: "📊"
 type: "tech"
 topics: ["infrasim", "sre", "slo", "chaosengineering", "kubernetes"]

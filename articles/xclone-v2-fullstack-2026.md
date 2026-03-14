@@ -1,5 +1,5 @@
 ---
-title: "【2026年最新】Xクローン v2を最先端技術で再構築 — Hono+Bun / Next.js 15 RSC / Drizzle ORM / ArgoCD / Linkerd / OpenTelemetry の全設計と実装"
+title: "Xクローン v2を最先端技術で再構築 — Hono+Bun / Next.js 15 / ArgoCD / OTel"
 emoji: "🚀"
 type: "tech"
 topics: ["hono", "nextjs", "terraform", "argocd", "opentelemetry"]
