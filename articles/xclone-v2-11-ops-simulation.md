@@ -3,7 +3,7 @@ title: "Xクローン v2.11 — InfraSim v3.0: 本番運用シミュレーショ
 emoji: "📊"
 type: "tech"
 topics: ["infrasim", "sre", "slo", "chaosengineering", "kubernetes"]
-published: false
+published: true
 ---
 
 ## はじめに — v2.10で障害耐性は完成した、しかし…

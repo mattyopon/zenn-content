@@ -3,7 +3,7 @@ title: "Xクローン v2.28 — NLBバックアップ追加とレジリエンス
 emoji: "📊"
 type: "tech"
 topics: ["infrastructure", "aws", "sre", "chaosengineering", "kubernetes"]
-published: false
+published: true
 ---
 
 ## はじめに

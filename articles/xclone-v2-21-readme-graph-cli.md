@@ -3,7 +3,7 @@ title: "InfraSim v5.0: README全面改訂・依存グラフ修正・CLI UX改善
 emoji: "📊"
 type: "tech"
 topics: ["python", "infrastructure", "chaosengineering", "cli", "networkx"]
-published: false
+published: true
 ---
 
 ## はじめに

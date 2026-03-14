@@ -3,7 +3,7 @@ title: "Xクローン v2.7（最終回）— InfraSim 1,647シナリオ全PASSED
 emoji: "🏆"
 type: "tech"
 topics: ["infrasim", "chaosengineering", "aws", "sre", "kubernetes"]
-published: false
+published: true
 ---
 
 ## はじめに

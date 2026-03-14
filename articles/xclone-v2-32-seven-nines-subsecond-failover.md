@@ -3,7 +3,7 @@ title: "Xクローン v2.32 — Sub-secondフェイルオーバーでSeven Nines
 emoji: "⚡"
 type: "tech"
 topics: ["infrastructure", "sre", "python", "chaosengineering", "failover"]
-published: false
+published: true
 ---
 
 ## はじめに

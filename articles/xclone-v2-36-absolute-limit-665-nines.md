@@ -3,7 +3,7 @@ title: "Xクローン v2.36 最終回 — パケットロス0%にしても6.65 N
 emoji: "🏁"
 type: "tech"
 topics: ["infrastructure", "sre", "availability", "simulation", "physics"]
-published: false
+published: true
 ---
 
 ## はじめに

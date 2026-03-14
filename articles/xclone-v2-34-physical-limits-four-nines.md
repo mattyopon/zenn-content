@@ -3,7 +3,7 @@ title: "Xクローン v2.34 — パケットロスとGCパーズを入れたら6
 emoji: "🌐"
 type: "tech"
 topics: ["infrastructure", "sre", "network", "availability", "simulation"]
-published: false
+published: true
 ---
 
 ## はじめに

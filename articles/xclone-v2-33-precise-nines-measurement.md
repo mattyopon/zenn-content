@@ -3,7 +3,7 @@ title: "Xクローン v2.33 — 可用性を小数点10桁で計測したら6.65
 emoji: "🔢"
 type: "tech"
 topics: ["infrastructure", "sre", "availability", "chaosengineering", "simulation"]
-published: false
+published: true
 ---
 
 ## はじめに

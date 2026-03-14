@@ -3,7 +3,7 @@ title: "Xクローン v2.29 — SLO 100%は嘘だった：フェイルオーバ�
 emoji: "💯"
 type: "tech"
 topics: ["infrastructure", "sre", "chaosengineering", "aws", "kubernetes"]
-published: false
+published: true
 ---
 
 ## はじめに

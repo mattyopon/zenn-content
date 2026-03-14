@@ -3,7 +3,7 @@ title: "InfraSim v5.2: SVG XSSの修正とシミュレーション堅牢化"
 emoji: "🛡️"
 type: "tech"
 topics: ["python", "security", "xss", "infrastructure", "chaosengineering"]
-published: false
+published: true
 ---
 
 ## はじめに

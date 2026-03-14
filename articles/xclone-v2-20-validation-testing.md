@@ -3,7 +3,7 @@ title: "InfraSim v4.9: バリデーション強化・パフォーマンス改善
 emoji: "🛡️"
 type: "tech"
 topics: ["infrasim", "python", "testing", "validation", "sre"]
-published: false
+published: true
 ---
 
 ## はじめに

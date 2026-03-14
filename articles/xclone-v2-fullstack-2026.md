@@ -3,7 +3,7 @@ title: "Xクローン v2を最先端技術で再構築 — Hono+Bun / Next.js 15
 emoji: "🚀"
 type: "tech"
 topics: ["hono", "nextjs", "terraform", "argocd", "opentelemetry"]
-published: false
+published: true
 ---
 
 ## はじめに

@@ -3,7 +3,7 @@ title: "InfraSim v4.7 — API品質改善・副作用除去・決定論的シミ
 emoji: "🧹"
 type: "tech"
 topics: ["InfraSim", "infrastructure", "simulation", "SRE"]
-published: false
+published: true
 ---
 
 ## はじめに

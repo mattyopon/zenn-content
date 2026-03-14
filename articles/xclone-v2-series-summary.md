@@ -3,7 +3,7 @@ title: "【完全版】Xクローン v2 シリーズ総まとめ — 11記事・
 emoji: "📚"
 type: "tech"
 topics: ["nextjs", "hono", "terraform", "kubernetes", "typescript"]
-published: false
+published: true
 ---
 
 ## はじめに
