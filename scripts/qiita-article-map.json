@@ -162,5 +162,9 @@
   "2026031422-claude-code144-agency-agents40kai.md": {
     "qiita_id": "de0f6cb20950fa5f375e",
     "title": "簡単コピペでClaude Codeに144種類のエージェントチームを作成 ── agency-agentsという40Kスター超のAIエージェ"
+  },
+  "2026031522-obsidianllmailocal-llm-hub.md": {
+    "qiita_id": "90ceeb4db38046d30766",
+    "title": "ObsidianとローカルLLMを連携するAIプラグイン「Local LLM Hub」を作りました"
   }
 }
