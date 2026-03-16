@@ -1,14 +1,15 @@
 {
   "published_urls": [
     "https://qiita.com/nogataka/items/5b5747f619e6eb745436?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items",
-    "https://www.publickey1.jp/blog/26/claude_coworkmicrosoft_365_copilotcopilot_cowork.html",
+    "https://qiita.com/takeshy/items/00213a75e7e71cc66269?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items",
+    "https://zenn.dev/hsaki/articles/why-claude-code-function",
     "https://qiita.com/kotai2003/items/e88e7c247c6cb70c57dc?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items",
-    "https://qiita.com/takeshy/items/00213a75e7e71cc66269?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items"
+    "https://www.publickey1.jp/blog/26/claude_coworkmicrosoft_365_copilotcopilot_cowork.html"
   ],
-  "last_run": "2026-03-15T22:36:11.557146+00:00",
+  "last_run": "2026-03-16T22:42:10.343423+00:00",
   "last_article": {
-    "title": "ObsidianとローカルLLMを連携するAIプラグイン「Local LLM Hub」を作りました",
-    "slug": "2026031522-obsidianllmailocal-llm-hub",
+    "title": "課題ベースで学ぶClaude Code便利機能",
+    "slug": "2026031622-claude-code",
     "topic": "ai"
   }
 }

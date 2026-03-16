@@ -166,5 +166,9 @@
   "2026031522-obsidianllmailocal-llm-hub.md": {
     "qiita_id": "90ceeb4db38046d30766",
     "title": "ObsidianとローカルLLMを連携するAIプラグイン「Local LLM Hub」を作りました"
+  },
+  "2026031622-claude-code.md": {
+    "qiita_id": "483f591c47dfb94804f6",
+    "title": "課題ベースで学ぶClaude Code便利機能"
   }
 }
