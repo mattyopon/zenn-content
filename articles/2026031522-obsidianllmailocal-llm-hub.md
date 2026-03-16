@@ -3,7 +3,7 @@ title: "ObsidianとローカルLLMを連携するAIプラグイン「Local LLM H
 emoji: "🤖"
 type: "tech"
 topics: ["ai", "llm", "machinelearning", "python"]
-published: false
+published: true
 ---
 
 ## 概要
