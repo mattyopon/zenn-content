@@ -1,15 +1,16 @@
 {
   "published_urls": [
+    "https://www.publickey1.jp/blog/26/claude_coworkmicrosoft_365_copilotcopilot_cowork.html",
     "https://qiita.com/nogataka/items/5b5747f619e6eb745436?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items",
-    "https://qiita.com/takeshy/items/00213a75e7e71cc66269?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items",
     "https://zenn.dev/hsaki/articles/why-claude-code-function",
+    "https://qiita.com/takeshy/items/00213a75e7e71cc66269?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items",
     "https://qiita.com/kotai2003/items/e88e7c247c6cb70c57dc?utm_campaign=popular_items&utm_medium=feed&utm_source=popular_items",
-    "https://www.publickey1.jp/blog/26/claude_coworkmicrosoft_365_copilotcopilot_cowork.html"
+    "https://zenn.dev/uhyo/articles/react-profession-bench-2"
   ],
-  "last_run": "2026-03-16T22:42:10.343423+00:00",
+  "last_run": "2026-03-17T22:41:45.884485+00:00",
   "last_article": {
-    "title": "課題ベースで学ぶClaude Code便利機能",
-    "slug": "2026031622-claude-code",
+    "title": "GPTのReact習熟度も測る",
+    "slug": "2026031722-gptreact",
     "topic": "ai"
   }
 }
