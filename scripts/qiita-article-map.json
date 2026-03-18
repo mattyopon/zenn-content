@@ -174,5 +174,9 @@
   "2026031722-gptreact.md": {
     "qiita_id": "ab937585d0697d0d822e",
     "title": "GPTのReact習熟度も測る"
+  },
+  "2026031822-gpt-54-computer-use-api.md": {
+    "qiita_id": "4dbfaf53832136019e15",
+    "title": "GPT-5.4 Computer Use を実際に動かしてわかったこと ── API設計・実装パターン・セキュリティの勘所"
   }
 }
