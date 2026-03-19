@@ -178,5 +178,9 @@
   "2026031822-gpt-54-computer-use-api.md": {
     "qiita_id": "4dbfaf53832136019e15",
     "title": "GPT-5.4 Computer Use を実際に動かしてわかったこと ── API設計・実装パターン・セキュリティの勘所"
+  },
+  "2026031922-llm.md": {
+    "qiita_id": "88aea0c519b399186a5e",
+    "title": "LLMをもっと賢くする：ナレッジグラフ実践入門"
   }
 }
