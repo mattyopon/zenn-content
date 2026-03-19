@@ -3,7 +3,7 @@ title: "GPT-5.4 Computer Use を実際に動かしてわかったこと ── A
 emoji: "🤖"
 type: "tech"
 topics: ["ai", "llm", "machinelearning", "python"]
-published: false
+published: true
 ---
 
 ## 概要
