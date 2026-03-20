@@ -182,5 +182,9 @@
   "2026031922-llm.md": {
     "qiita_id": "88aea0c519b399186a5e",
     "title": "LLMをもっと賢くする：ナレッジグラフ実践入門"
+  },
+  "2026032022-2026llmollamaai.md": {
+    "qiita_id": "cda5df3909979f9c4609",
+    "title": "【2026年最新版】ローカルLLM（Ollama）で完全オフラインAI開発環境を作る"
   }
 }
